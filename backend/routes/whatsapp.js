@@ -34,7 +34,7 @@ router.get('/chats', (req, res) => {
   const jidMap = buildJidMap();
   const allConvs = conversations.getAll();
 
-  const chats = allConvs.map(({ jid, messages }) => {
+  const chats = allConvs.filter(({ jid }) => jid !== 'status').map(({ jid, messages }) => {
     const contact = jidMap.get(jid);
     const lastMsg = messages.length ? messages[messages.length - 1] : null;
     const unread = messages.filter(m => m.direction === 'in' && !m.read).length;
@@ -131,7 +131,8 @@ router.post('/webhook', (req, res) => {
     // Fallback to standard Evolution API format (data.key.remoteJid)
     const remoteJid = data?.Info?.Chat ?? data?.key?.remoteJid ?? data?.remoteJid ?? '';
     const fromMe    = data?.Info?.IsFromMe ?? data?.key?.fromMe ?? data?.fromMe ?? false;
-    if (!remoteJid || fromMe) return res.sendStatus(200);
+    const jidClean = remoteJid.replace(/@.*$/, '');
+    if (!remoteJid || fromMe || jidClean === 'status') return res.sendStatus(200);
 
     // Extract text — Evolution GO uses data.Message (capital M)
     const msgObj = data?.Message ?? data?.message ?? {};
@@ -141,8 +142,8 @@ router.post('/webhook', (req, res) => {
       || msgObj.documentMessage?.caption
       || '[Media]';
 
-    // Normalize JID — strip @s.whatsapp.net suffix
-    const jid = remoteJid.replace(/@.*$/, '');
+    // jidClean already computed above (without @s.whatsapp.net)
+    const jid = jidClean;
 
     const message = conversations.addMessage(jid, {
       direction: 'in',
