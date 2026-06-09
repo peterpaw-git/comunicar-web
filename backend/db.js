@@ -226,6 +226,8 @@ const conversations = {
       bulk:           msg.bulk ?? false,
       mediaType:      msg.mediaType ?? null,       // 'image'|'video'|'document'|'audio'|'sticker'
       whatsappMsgId:  msg.whatsappMsgId ?? null,   // original WA message ID for media download
+      mediaFileName:  msg.mediaFileName ?? null,   // original filename (for documents)
+      mediaMimetype:  msg.mediaMimetype ?? null,   // mimetype (for download headers)
     };
     all[jid].messages.push(message);
     // Keep last 500 messages per conversation

@@ -91,23 +91,36 @@ const MEDIA_ICON: Record<string, string> = {
 // ── MessageBubble ─────────────────────────────────────────────────────────────
 function MessageBubble({ msg, jid }: { msg: ChatMessage; jid: string }) {
   const isOut = msg.direction === 'out';
-  const [imgSrc, setImgSrc]     = useState<string | null>(null);
-  const [imgError, setImgError] = useState(false);
-  const [imgLoading, setImgLoading] = useState(false);
+  const [mediaSrc, setMediaSrc]   = useState<string | null>(null);
+  const [mediaError, setMediaError] = useState(false);
+  const [mediaLoading, setMediaLoading] = useState(false);
   const { getAuthToken } = useAuthToken();
 
-  // Lazy-load image media
+  const buildMediaUrl = (extra = '') => {
+    const token = getAuthToken() ?? '';
+    return `/api/whatsapp/media?msgId=${encodeURIComponent(msg.whatsappMsgId ?? '')}&jid=${encodeURIComponent(jid)}&token=${encodeURIComponent(token)}${extra}`;
+  };
+
+  // Lazy-load image and audio (they show inline)
   useEffect(() => {
-    if (msg.mediaType !== 'image' || !msg.whatsappMsgId || imgSrc || imgError) return;
-    setImgLoading(true);
-    const token = getAuthToken();
-    const url = `/api/whatsapp/media?msgId=${encodeURIComponent(msg.whatsappMsgId)}&jid=${encodeURIComponent(jid)}&token=${encodeURIComponent(token ?? '')}`;
-    fetch(url)
+    if (!msg.whatsappMsgId || mediaSrc || mediaError) return;
+    if (msg.mediaType !== 'image' && msg.mediaType !== 'audio') return;
+    setMediaLoading(true);
+    fetch(buildMediaUrl())
       .then(r => { if (!r.ok) throw new Error('not ok'); return r.blob(); })
-      .then(blob => setImgSrc(URL.createObjectURL(blob)))
-      .catch(() => setImgError(true))
-      .finally(() => setImgLoading(false));
+      .then(blob => setMediaSrc(URL.createObjectURL(blob)))
+      .catch(() => setMediaError(true))
+      .finally(() => setMediaLoading(false));
   }, [msg.mediaType, msg.whatsappMsgId, jid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDownload = () => {
+    const fname = msg.mediaFileName || 'documento';
+    const url = buildMediaUrl(`&filename=${encodeURIComponent(fname)}`);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    a.click();
+  };
 
   return (
     <div className={clsx('flex', isOut ? 'justify-end' : 'justify-start')}>
@@ -120,45 +133,87 @@ function MessageBubble({ msg, jid }: { msg: ChatMessage; jid: string }) {
           : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
       )}>
         {msg.bulk && (
-          <span className={clsx(
-            'text-[9px] font-semibold uppercase tracking-wide block mb-0.5',
-            isOut ? 'text-white/60' : 'text-gray-400'
-          )}>bulk</span>
+          <span className={clsx('text-[9px] font-semibold uppercase tracking-wide block mb-0.5',
+            isOut ? 'text-white/60' : 'text-gray-400')}>bulk</span>
         )}
 
-        {/* ── Media content ── */}
+        {/* ── IMAGE ── */}
         {msg.mediaType === 'image' && (
-          <div className="mb-1">
-            {imgLoading && (
+          <div className="mb-1 min-w-[120px]">
+            {mediaLoading && (
               <div className="w-40 h-28 bg-black/10 rounded-lg flex items-center justify-center">
-                <span className="text-xs opacity-60">⏳</span>
+                <span className="animate-pulse text-lg">🖼️</span>
               </div>
             )}
-            {imgSrc && !imgLoading && (
-              <img
-                src={imgSrc}
-                alt="media"
+            {mediaSrc && !mediaLoading && (
+              <img src={mediaSrc} alt="media"
                 className="rounded-lg max-w-full max-h-60 object-contain cursor-pointer"
-                onClick={() => window.open(imgSrc, '_blank')}
-              />
+                onClick={() => window.open(mediaSrc, '_blank')} />
             )}
-            {imgError && !imgLoading && (
-              <div className="flex items-center gap-1.5 text-xs opacity-70">
-                <span>{MEDIA_ICON.image}</span>
-                <span>Immagine</span>
+            {mediaError && !mediaLoading && (
+              <div className="flex items-center gap-1.5 opacity-70">
+                <span>🖼️</span><span>Immagine</span>
               </div>
             )}
           </div>
         )}
 
-        {msg.mediaType && msg.mediaType !== 'image' && (
-          <div className={clsx(
-            'flex items-center gap-1.5 mb-1 px-2 py-1.5 rounded-lg text-xs',
-            isOut ? 'bg-white/10' : 'bg-gray-100'
-          )}>
-            <span className="text-base">{MEDIA_ICON[msg.mediaType] ?? '📎'}</span>
-            <span className="capitalize opacity-80">{msg.mediaType}</span>
+        {/* ── AUDIO / VOICE ── */}
+        {msg.mediaType === 'audio' && (
+          <div className="mb-1 min-w-[180px]">
+            {mediaLoading && <span className="opacity-60 text-xs">⏳ Caricamento…</span>}
+            {mediaSrc && !mediaLoading && (
+              <audio controls src={mediaSrc}
+                className="w-full max-w-[220px]"
+                style={{ height: 32 }} />
+            )}
+            {mediaError && !mediaLoading && (
+              <div className="flex items-center gap-1.5 opacity-70">
+                <span>🎵</span><span>Audio</span>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* ── DOCUMENT (PDF, ecc.) ── */}
+        {msg.mediaType === 'document' && msg.whatsappMsgId && (
+          <button
+            onClick={handleDownload}
+            className={clsx(
+              'flex items-center gap-2 mb-1 px-2.5 py-2 rounded-lg w-full text-left transition-colors',
+              isOut ? 'bg-white/15 hover:bg-white/25' : 'bg-gray-100 hover:bg-gray-200'
+            )}>
+            <span className="text-xl shrink-0">📄</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate text-xs">{msg.mediaFileName || 'Documento'}</p>
+              <p className={clsx('text-[10px] mt-0.5', isOut ? 'text-white/60' : 'text-gray-400')}>
+                {msg.mediaMimetype?.includes('pdf') ? 'PDF' : msg.mediaMimetype ?? ''} · Clicca per scaricare
+              </p>
+            </div>
+            <span className="text-sm shrink-0 opacity-70">⬇️</span>
+          </button>
+        )}
+        {msg.mediaType === 'document' && !msg.whatsappMsgId && (
+          <div className="flex items-center gap-1.5 mb-1 opacity-70">
+            <span>📄</span><span>{msg.mediaFileName || 'Documento'}</span>
+          </div>
+        )}
+
+        {/* ── VIDEO ── */}
+        {msg.mediaType === 'video' && (
+          <div className={clsx('flex items-center gap-2 mb-1 px-2.5 py-2 rounded-lg',
+            isOut ? 'bg-white/15' : 'bg-gray-100')}>
+            <span className="text-xl">🎥</span>
+            <span className="opacity-80">Video</span>
+            {msg.whatsappMsgId && (
+              <button onClick={handleDownload} className="ml-auto opacity-70 hover:opacity-100">⬇️</button>
+            )}
+          </div>
+        )}
+
+        {/* ── STICKER ── */}
+        {msg.mediaType === 'sticker' && (
+          <div className="mb-1 text-2xl">🎭</div>
         )}
 
         {/* ── Text / caption ── */}

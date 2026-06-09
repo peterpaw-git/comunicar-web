@@ -81,17 +81,16 @@ router.get('/messages/:jid', (req, res) => {
   res.json(conversations.getMessages(jid));
 });
 
-// GET /api/whatsapp/media?msgId=xxx&jid=xxx&token=xxx
+// GET /api/whatsapp/media?msgId=xxx&jid=xxx&filename=xxx&token=xxx
 // Proxy: downloads media from Evolution GO and returns it as binary
-// Note: token in query param because this is loaded as <img src>
+// Note: token in query param because this may be loaded as <img src> or <audio src>
 router.get('/media', async (req, res) => {
-  const { msgId, jid } = req.query;
+  const { msgId, jid, filename } = req.query;
   if (!msgId || !jid) return res.status(400).json({ error: 'msgId and jid required' });
 
   const BASE = () => process.env.EVOLUTION_URL?.replace(/\/$/, '');
   const KEY  = () => process.env.EVOLUTION_APIKEY;
 
-  // Try Evolution GO / standard Evolution API download endpoint
   try {
     const fullJid = jid.includes('@') ? jid : `${jid}@s.whatsapp.net`;
     const dlRes = await require('node-fetch')(`${BASE()}/chat/getBase64FromMediaMessage`, {
@@ -107,8 +106,12 @@ router.get('/media', async (req, res) => {
     const b64 = dlData.base64 || dlData.data;
     if (!b64) throw new Error('No base64 in response');
     const buf = Buffer.from(b64, 'base64');
-    res.setHeader('Content-Type', dlData.mimetype || 'application/octet-stream');
+    const mime = dlData.mimetype || 'application/octet-stream';
+    res.setHeader('Content-Type', mime);
     res.setHeader('Cache-Control', 'max-age=3600');
+    if (filename) {
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    }
     return res.send(buf);
   } catch (e) {
     console.warn('[media proxy]', e.message);
@@ -175,12 +178,26 @@ function webhookHandler(req, res) {
 
     // Extract message object and detect media type
     const msgObj = data?.Message ?? data?.message ?? {};
-    let mediaType = null;
-    if      (msgObj.imageMessage)    mediaType = 'image';
-    else if (msgObj.videoMessage)    mediaType = 'video';
-    else if (msgObj.documentMessage) mediaType = 'document';
-    else if (msgObj.audioMessage || msgObj.pttMessage) mediaType = 'audio';
-    else if (msgObj.stickerMessage)  mediaType = 'sticker';
+    let mediaType    = null;
+    let mediaFileName = null;
+    let mediaMimetype = null;
+    if (msgObj.imageMessage) {
+      mediaType = 'image';
+      mediaMimetype = msgObj.imageMessage.mimetype ?? 'image/jpeg';
+    } else if (msgObj.videoMessage) {
+      mediaType = 'video';
+      mediaMimetype = msgObj.videoMessage.mimetype ?? 'video/mp4';
+    } else if (msgObj.documentMessage) {
+      mediaType = 'document';
+      mediaFileName = msgObj.documentMessage.fileName ?? null;
+      mediaMimetype = msgObj.documentMessage.mimetype ?? 'application/octet-stream';
+    } else if (msgObj.audioMessage || msgObj.pttMessage) {
+      mediaType = 'audio';
+      mediaMimetype = (msgObj.audioMessage ?? msgObj.pttMessage)?.mimetype ?? 'audio/ogg';
+    } else if (msgObj.stickerMessage) {
+      mediaType = 'sticker';
+      mediaMimetype = msgObj.stickerMessage.mimetype ?? 'image/webp';
+    }
 
     // Extract text / caption
     const text = msgObj.conversation
@@ -188,7 +205,7 @@ function webhookHandler(req, res) {
       || msgObj.imageMessage?.caption
       || msgObj.videoMessage?.caption
       || msgObj.documentMessage?.caption
-      || (mediaType ? '' : '[Media]');
+      || '';
 
     const jid = jidClean;
     const direction = fromMe ? 'out' : 'in';
@@ -199,6 +216,8 @@ function webhookHandler(req, res) {
       read: direction === 'out',
       mediaType,
       whatsappMsgId,
+      mediaFileName,
+      mediaMimetype,
     });
 
     pushToClients({ type: 'message', jid, message });

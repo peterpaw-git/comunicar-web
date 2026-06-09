@@ -68,6 +68,8 @@ export interface ChatMessage {
   bulk?: boolean;
   mediaType?: 'image' | 'video' | 'document' | 'audio' | 'sticker' | null;
   whatsappMsgId?: string | null;
+  mediaFileName?: string | null;
+  mediaMimetype?: string | null;
 }
 
 export interface ChatContact {
