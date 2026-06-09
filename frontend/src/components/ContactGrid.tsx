@@ -102,7 +102,7 @@ export default function ContactGrid({ onEdit }: Props) {
     data: contacts,
     columns,
     state: { sorting, columnVisibility: { progressivo: false, id: false } },
-    onSortingChange: setSorting,
+    onSortingChange: updater => setSorting(prev => typeof updater === 'function' ? updater(prev) : updater),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
