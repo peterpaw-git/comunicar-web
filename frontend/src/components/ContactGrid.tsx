@@ -64,29 +64,23 @@ export default function ContactGrid({ onEdit }: Props) {
     { accessorKey: 'filhos',       header: t.colAluno,        size: 160, minSize: 60 },
     { accessorKey: 'responsabile', header: t.colResponsabile, size: 200, minSize: 80 },
     { accessorKey: 'gruppo',       header: t.colGruppo,       size: 72,  minSize: 50 },
-    { accessorKey: 'whats_mae', header: t.colWaMae, size: 120, minSize: 70,
-      cell: ({ row, getValue }) => {
-        const n = getValue<string | null>();
-        if (!n) return null;
-        const full = `${row.original.pref_int1 ?? '55'}${n}`;
-        return <a href={`https://wa.me/${full}`} target="_blank" rel="noreferrer"
-          className="text-green-700 underline">{n}</a>;
-      }
+    { accessorKey: 'whats_mae', header: t.colWaMae, size: 52, minSize: 44, maxSize: 60,
+      enableResizing: false,
+      cell: ({ getValue }) => getValue<string | null>()
+        ? <span className="text-green-500 font-bold text-sm flex justify-center">✓</span>
+        : <span className="text-gray-300 text-sm flex justify-center">✗</span>
     },
-    { accessorKey: 'whats_pai', header: t.colWaPai, size: 120, minSize: 70,
-      cell: ({ row, getValue }) => {
-        const n = getValue<string | null>();
-        if (!n) return null;
-        const full = `${row.original.pref_int2 ?? '55'}${n}`;
-        return <a href={`https://wa.me/${full}`} target="_blank" rel="noreferrer"
-          className="text-green-700 underline">{n}</a>;
-      }
+    { accessorKey: 'whats_pai', header: t.colWaPai, size: 52, minSize: 44, maxSize: 60,
+      enableResizing: false,
+      cell: ({ getValue }) => getValue<string | null>()
+        ? <span className="text-green-500 font-bold text-sm flex justify-center">✓</span>
+        : <span className="text-gray-300 text-sm flex justify-center">✗</span>
     },
-    { accessorKey: 'email_1', header: t.colEmail1, size: 200, minSize: 80,
-      cell: ({ getValue }) => {
-        const v = getValue<string | null>();
-        return v ? <a href={`mailto:${v}`} className="text-blue-700 underline truncate block">{v}</a> : null;
-      }
+    { accessorKey: 'email_1', header: t.colEmail1, size: 52, minSize: 44, maxSize: 60,
+      enableResizing: false,
+      cell: ({ getValue }) => getValue<string | null>()
+        ? <span className="text-blue-500 font-bold text-sm flex justify-center">✓</span>
+        : <span className="text-gray-300 text-sm flex justify-center">✗</span>
     },
     { accessorKey: 'voti', header: t.colNote, size: 120, minSize: 60,
       cell: ({ getValue }) => {

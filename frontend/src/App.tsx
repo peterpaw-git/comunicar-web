@@ -23,6 +23,11 @@ type AppMode = 'comunicar' | 'chat';
 type MobileTab = 'contacts' | 'compose' | 'results' | 'history';
 type RightTab = 'compose' | 'history';
 
+const LS_RIGHT_W  = 'comunicar-right-width';
+const LS_GROUPS_W = 'comunicar-groups-width';
+const MIN_RIGHT  = 260; const MAX_RIGHT  = 560; const DEF_RIGHT  = 320;
+const MIN_GROUPS = 140; const MAX_GROUPS = 380; const DEF_GROUPS = 224;
+
 const LANG_FLAGS: Record<Lang, string> = { it: '🇮🇹', br: '🇧🇷' };
 const LANG_LABELS: Record<Lang, string> = { it: 'IT', br: 'BR' };
 
@@ -72,6 +77,32 @@ export default function App() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   // undefined = closed, null = new, Contact = edit
+
+  // ── Resizable panels ──────────────────────────────────────────────────────
+  const [rightWidth, setRightWidth]   = useState(() => Number(localStorage.getItem(LS_RIGHT_W)  || DEF_RIGHT));
+  const [groupsWidth, setGroupsWidth] = useState(() => Number(localStorage.getItem(LS_GROUPS_W) || DEF_GROUPS));
+  const panelDragRef = useRef<{ type: 'right' | 'groups'; startX: number; startW: number } | null>(null);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const d = panelDragRef.current;
+      if (!d) return;
+      const dx = e.clientX - d.startX;
+      if (d.type === 'right') {
+        const w = Math.max(MIN_RIGHT, Math.min(MAX_RIGHT, d.startW - dx));
+        setRightWidth(w);
+        localStorage.setItem(LS_RIGHT_W, String(w));
+      } else {
+        const w = Math.max(MIN_GROUPS, Math.min(MAX_GROUPS, d.startW + dx));
+        setGroupsWidth(w);
+        localStorage.setItem(LS_GROUPS_W, String(w));
+      }
+    };
+    const onUp = () => { panelDragRef.current = null; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (authUser) {
@@ -379,16 +410,21 @@ export default function App() {
       {/* ── COMUNICAR MODE: DESKTOP layout (lg+) ── */}
       {appMode === 'comunicar' && <div className="hidden lg:flex flex-1 min-h-0">
         {/* Left panel */}
-        <div className="flex flex-col flex-1 min-w-0 min-h-0 border-r border-gray-200">
+        <div className="flex flex-col flex-1 min-w-0 min-h-0">
           {ImportBar}
           {Toolbar}
 
           {/* Groups + Grid */}
           <div className="flex flex-1 min-h-0">
-            {/* Side: selection groups */}
-            <div className="w-56 shrink-0 border-r border-gray-200 overflow-y-auto scrollbar-thin p-2 bg-gray-50">
+            {/* Side: selection groups — resizable */}
+            <div style={{ width: groupsWidth }} className="shrink-0 overflow-y-auto scrollbar-thin p-2 bg-gray-50 flex flex-col">
               <SelectionGroupsPanel />
             </div>
+            {/* Drag handle: groups */}
+            <div
+              className="w-1 shrink-0 cursor-col-resize bg-gray-200 hover:bg-brand-400 transition-colors select-none"
+              onMouseDown={e => { panelDragRef.current = { type: 'groups', startX: e.clientX, startW: groupsWidth }; e.preventDefault(); }}
+            />
             {/* Grid */}
             <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
               <ContactGrid onEdit={c => setModalContact(c)} />
@@ -402,8 +438,14 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right panel */}
-        <div className="w-80 xl:w-96 shrink-0 flex flex-col min-h-0">
+        {/* Drag handle: right panel */}
+        <div
+          className="w-1 shrink-0 cursor-col-resize bg-gray-200 hover:bg-brand-400 transition-colors select-none"
+          onMouseDown={e => { panelDragRef.current = { type: 'right', startX: e.clientX, startW: rightWidth }; e.preventDefault(); }}
+        />
+
+        {/* Right panel — resizable */}
+        <div style={{ width: rightWidth }} className="shrink-0 flex flex-col min-h-0">
           {/* Tab header */}
           <div className="flex shrink-0 border-b border-gray-200 bg-white">
             {([
