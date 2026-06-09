@@ -7,7 +7,7 @@
 set -e
 
 APP_DIR="/opt/comunicar"
-BRANCH="main"
+BRANCH="master"
 
 cd "$APP_DIR"
 
