@@ -125,11 +125,13 @@ router.post('/webhook', (req, res) => {
 
   try {
     const payload = req.body;
+    console.log('[webhook] received:', JSON.stringify(payload).slice(0, 300));
     const data = payload?.data ?? payload;
 
     // Extract remoteJid and check fromMe
     const remoteJid = data?.key?.remoteJid ?? data?.remoteJid ?? '';
     const fromMe   = data?.key?.fromMe ?? data?.fromMe ?? false;
+    console.log('[webhook] remoteJid:', remoteJid, 'fromMe:', fromMe);
     if (!remoteJid || fromMe) return res.sendStatus(200);
 
     // Extract text from various message types
