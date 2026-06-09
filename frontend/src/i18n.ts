@@ -235,6 +235,10 @@ const T = {
     aiModalEmpty:     'Scrivi qualcosa a sinistra per avviare l\'AI',
     aiModalClose:     'Annulla',
     aiModalRefresh:   '↺ Rielabora',
+    aiModalModeBase:    '⚡ Base',
+    aiModalModePremium: '💎 Premium',
+    aiModalModeBaseDesc:    'Correzione + traduzione + paragrafi + emoji leggeri',
+    aiModalModePremiumDesc: 'Formattazione WhatsApp avanzata: *grassetto*, elenchi •, sezioni con emoji, tono coinvolgente',
   },
 
   br: {
@@ -470,6 +474,10 @@ const T = {
     aiModalEmpty:     'Escreva algo à esquerda para iniciar a IA',
     aiModalClose:     'Cancelar',
     aiModalRefresh:   '↺ Reprocessar',
+    aiModalModeBase:    '⚡ Base',
+    aiModalModePremium: '💎 Premium',
+    aiModalModeBaseDesc:    'Correção + tradução + parágrafos + emojis leves',
+    aiModalModePremiumDesc: 'Formatação WhatsApp avançada: *negrito*, listas •, seções com emoji, tom envolvente',
   },
 } as const;
 

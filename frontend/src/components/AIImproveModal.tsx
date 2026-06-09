@@ -4,9 +4,10 @@ import clsx from 'clsx';
 import { useT } from '../useT';
 import { api } from '../api';
 
+type AIMode = 'base' | 'premium';
+
 interface Props {
   initialText: string;
-  /** Called when the user clicks "Usa questo" under either column */
   onAccept: (text: string) => void;
   onClose: () => void;
 }
@@ -21,35 +22,30 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
   const [noKey, setNoKey]         = useState(false);
-  const [ran, setRan]             = useState(false); // whether AI has run at least once
+  const [ran, setRan]             = useState(false);
+  const [mode, setMode]           = useState<AIMode>('base');
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef    = useRef<AbortController | null>(null);
+  const modeRef     = useRef<AIMode>('base'); // always up-to-date in callbacks
+  modeRef.current = mode;
 
   // ── Run AI ──────────────────────────────────────────────────────────────────
-  const runAI = useCallback(async (text: string) => {
+  const runAI = useCallback(async (text: string, aiMode?: AIMode) => {
     if (!text.trim()) { setRightText(''); setLoading(false); return; }
-
-    // Cancel any previous in-flight request
     abortRef.current?.abort();
     abortRef.current = new AbortController();
-
     setLoading(true);
     setError('');
     setNoKey(false);
-
     try {
-      const { improved } = await api.ai.improve(text);
+      const { improved } = await api.ai.improve(text, aiMode ?? modeRef.current);
       setRightText(improved);
       setRan(true);
     } catch (e: unknown) {
       const data = (e as { response?: { data?: { error?: string; noKey?: boolean } } })?.response?.data;
-      if (data?.noKey) {
-        setNoKey(true);
-        setError(t.aiNoKey);
-      } else {
-        setError(data?.error || t.aiError);
-      }
+      if (data?.noKey) { setNoKey(true); setError(t.aiNoKey); }
+      else              { setError(data?.error || t.aiError); }
     } finally {
       setLoading(false);
     }
@@ -57,7 +53,7 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
 
   // ── Initial run on mount ───────────────────────────────────────────────────
   useEffect(() => {
-    if (initialText.trim()) runAI(initialText);
+    if (initialText.trim()) runAI(initialText, 'base');
     return () => {
       abortRef.current?.abort();
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -65,16 +61,23 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Handle left-side edits with debounce ──────────────────────────────────
+  // ── Mode change → re-run immediately ──────────────────────────────────────
+  const handleModeChange = (newMode: AIMode) => {
+    if (newMode === mode) return;
+    setMode(newMode);
+    modeRef.current = newMode;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (leftText.trim()) {
+      setLoading(true);
+      runAI(leftText, newMode);
+    }
+  };
+
+  // ── Left-side edits with debounce ─────────────────────────────────────────
   const handleLeftChange = (val: string) => {
     setLeftText(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!val.trim()) {
-      setRightText('');
-      setLoading(false);
-      return;
-    }
-    // Show "thinking" state immediately
+    if (!val.trim()) { setRightText(''); setLoading(false); return; }
     setLoading(true);
     debounceRef.current = setTimeout(() => runAI(val), DEBOUNCE_MS);
   };
@@ -84,7 +87,6 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
     runAI(leftText);
   };
 
-  // ── Backdrop click closes modal ────────────────────────────────────────────
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -107,6 +109,28 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
             <Sparkles size={16} />
             {t.aiModalTitle}
           </div>
+
+          {/* Mode selector — center of header */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+            {(['base', 'premium'] as AIMode[]).map(m => (
+              <button
+                key={m}
+                onClick={() => handleModeChange(m)}
+                title={m === 'base' ? t.aiModalModeBaseDesc : t.aiModalModePremiumDesc}
+                className={clsx(
+                  'px-3 py-1 rounded-md text-xs font-semibold transition-all',
+                  mode === m
+                    ? m === 'premium'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
+                      : 'bg-white text-purple-700 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                )}
+              >
+                {m === 'base' ? t.aiModalModeBase : t.aiModalModePremium}
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors rounded p-1"
@@ -114,6 +138,13 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
           >
             <X size={18} />
           </button>
+        </div>
+
+        {/* Mode description */}
+        <div className="px-5 py-1.5 bg-gray-50 border-b border-gray-100 shrink-0">
+          <p className="text-[11px] text-gray-500 text-center">
+            {mode === 'premium' ? t.aiModalModePremiumDesc : t.aiModalModeBaseDesc}
+          </p>
         </div>
 
         {/* ── Two-column body ── */}
@@ -153,14 +184,16 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
             </button>
           </div>
 
-          {/* ──────── RIGHT: AI improved (read-only) ──────── */}
+          {/* ──────── RIGHT: AI improved ──────── */}
           <div className="flex flex-col flex-1 min-w-0 p-4 gap-2">
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
+              <span className={clsx(
+                'text-xs font-semibold uppercase tracking-wide',
+                mode === 'premium' ? 'text-indigo-600' : 'text-purple-600'
+              )}>
                 {t.aiModalImproved}
               </span>
 
-              {/* Refresh button — only after first run */}
               {ran && !loading && (
                 <button
                   onClick={handleManualRefresh}
@@ -181,7 +214,9 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
                   ? 'border-purple-200 bg-purple-50/40'
                   : error
                     ? 'border-red-200 bg-red-50/30'
-                    : 'border-purple-200 bg-purple-50/20',
+                    : mode === 'premium'
+                      ? 'border-indigo-200 bg-indigo-50/20'
+                      : 'border-purple-200 bg-purple-50/20',
               )}
             >
               {loading ? (
@@ -205,7 +240,6 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
                   )}
                 </div>
               ) : rightText ? (
-                /* Render with newlines preserved */
                 <div className="whitespace-pre-wrap text-gray-800">{rightText}</div>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-300 text-xs italic text-center">
@@ -220,7 +254,9 @@ export default function AIImproveModal({ initialText, onAccept, onClose }: Props
               className={clsx(
                 'shrink-0 w-full py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors',
                 canAcceptRight
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
+                  ? mode === 'premium'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-sm'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
                   : 'bg-gray-100 text-gray-300 cursor-not-allowed'
               )}
             >

@@ -161,8 +161,8 @@ export const api = {
     status: () =>
       ax.get<{ available: boolean; provider: string | null }>('/ai/status').then(r => r.data),
 
-    improve: (text: string) =>
-      ax.post<{ improved: string }>('/ai/improve', { text }).then(r => r.data),
+    improve: (text: string, mode: 'base' | 'premium' = 'base') =>
+      ax.post<{ improved: string }>('/ai/improve', { text, mode }).then(r => r.data),
   },
 
   settings: {
