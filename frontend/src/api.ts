@@ -157,6 +157,14 @@ export const api = {
     },
   },
 
+  settings: {
+    get: () =>
+      ax.get<{ inactivityTimeout: number }>('/settings').then(r => r.data),
+
+    update: (data: { inactivityTimeout?: number }) =>
+      ax.patch<{ inactivityTimeout: number }>('/settings', data).then(r => r.data),
+  },
+
   // Helper to build SSE URL with auth token (for EventSource which can't set headers)
   sseUrl: (path: string) => {
     const token = getAuthToken();

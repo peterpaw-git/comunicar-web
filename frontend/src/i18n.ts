@@ -207,6 +207,19 @@ const T = {
     userMgmtCancel:         'Annulla',
     userMgmtSaving:         'Salvataggio...',
     userMgmtSave:           'Salva',
+
+    // ── Settings modal ────────────────────────────────────────────────────────
+    settingsTitle:              'Impostazioni',
+    settingsInactivityLabel:    'Timeout inattività',
+    settingsInactivityHint:     "L'app torna al login dopo X minuti senza attività dell'utente.",
+    settingsMinutes:            'minuti',
+    settingsZeroDisabled:       '0 = disabilitato (nessun timeout automatico)',
+    settingsSaved:              '✓ Salvato',
+
+    // ── Session / inactivity ──────────────────────────────────────────────────
+    sessionExpiredNotice:       'Sessione scaduta per inattività. Accedi di nuovo.',
+    inactivityWarning:          (s: number) => `Sessione in scadenza tra ${s} s. Clicca per continuare.`,
+    inactivityWarningBtn:       'Continua',
   },
 
   br: {
@@ -414,6 +427,19 @@ const T = {
     userMgmtCancel:         'Cancelar',
     userMgmtSaving:         'Salvando...',
     userMgmtSave:           'Salvar',
+
+    // ── Settings modal ────────────────────────────────────────────────────────
+    settingsTitle:              'Configurações',
+    settingsInactivityLabel:    'Tempo limite de inatividade',
+    settingsInactivityHint:     'O app volta ao login após X minutos sem atividade do usuário.',
+    settingsMinutes:            'minutos',
+    settingsZeroDisabled:       '0 = desativado (sem limite automático)',
+    settingsSaved:              '✓ Salvo',
+
+    // ── Session / inactivity ──────────────────────────────────────────────────
+    sessionExpiredNotice:       'Sessão expirada por inatividade. Faça login novamente.',
+    inactivityWarning:          (s: number) => `Sessão expira em ${s} s. Clique para continuar.`,
+    inactivityWarningBtn:       'Continuar',
   },
 } as const;
 

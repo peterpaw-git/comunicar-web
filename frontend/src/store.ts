@@ -85,10 +85,14 @@ interface State {
   authUser: AuthUser | null;
   authToken: string | null;
   authLoading: boolean;
+  sessionExpired: boolean;
+  inactivityTimeout: number;       // minutes; 0 = disabled
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: (reason?: 'inactivity') => void;
   loadAuth: () => Promise<boolean>;
   clearMustChangePassword: () => void;
+  fetchSettings: () => Promise<void>;
+  setInactivityTimeout: (m: number) => void;
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -126,11 +130,13 @@ export const useStore = create<State>((set, get) => ({
   authUser: null,
   authToken: localStorage.getItem('comunicar-token'),
   authLoading: false,
+  sessionExpired: false,
+  inactivityTimeout: 30,
 
   login: async (email, password) => {
     const { token, user } = await api.auth.login(email, password);
     setAuthToken(token);
-    set({ authUser: user, authToken: token });
+    set({ authUser: user, authToken: token, sessionExpired: false });
   },
 
   // Called after a successful password change so mustChangePassword clears in-store too
@@ -138,9 +144,9 @@ export const useStore = create<State>((set, get) => ({
     set(s => s.authUser ? { authUser: { ...s.authUser, mustChangePassword: false } } : {});
   },
 
-  logout: () => {
+  logout: (reason) => {
     setAuthToken(null);
-    set({ authUser: null, authToken: null });
+    set({ authUser: null, authToken: null, sessionExpired: reason === 'inactivity' });
   },
 
   loadAuth: async () => {
@@ -157,6 +163,15 @@ export const useStore = create<State>((set, get) => ({
       return false;
     }
   },
+
+  fetchSettings: async () => {
+    try {
+      const s = await api.settings.get();
+      set({ inactivityTimeout: s.inactivityTimeout });
+    } catch { /* keep default */ }
+  },
+
+  setInactivityTimeout: (m) => set({ inactivityTimeout: m }),
 
   sending: false,
   pendingSend: false,

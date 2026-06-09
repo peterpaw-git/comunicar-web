@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { Search, X, Upload, Download, CheckSquare, Square, Users, MessageSquare, BarChart2, RefreshCw, UserPlus, Trash2, History, Sun, Moon, MessageCircle, LogOut, Settings, KeyRound, ChevronDown } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Search, X, Upload, Download, CheckSquare, Square, Users, MessageSquare, BarChart2, RefreshCw, UserPlus, Trash2, History, Sun, Moon, MessageCircle, LogOut, Settings, KeyRound, ChevronDown, Timer } from 'lucide-react';
 import clsx from 'clsx';
 import { useStore } from './store';
 import { useT } from './useT';
@@ -15,6 +15,8 @@ import ChatDashboard from './components/ChatDashboard';
 import LoginPage from './components/LoginPage';
 import UserManagementModal from './components/UserManagementModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
+import SettingsModal from './components/SettingsModal';
+import { useInactivityTimer } from './hooks/useInactivityTimer';
 import type { Contact } from './types';
 
 type AppMode = 'comunicar' | 'chat';
@@ -32,6 +34,7 @@ export default function App() {
     markFatto, importCSV, deleteContacts,
     lang, setLang, theme, setTheme,
     authUser, authLoading, loadAuth, logout,
+    inactivityTimeout, fetchSettings,
   } = useStore();
   const t = useT();
 
@@ -64,9 +67,10 @@ export default function App() {
   const [importMsg, setImportMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [modalContact, setModalContact] = useState<Contact | null | undefined>(undefined);
-  const [showUserMgmt, setShowUserMgmt]     = useState(false);
-  const [showChangePw, setShowChangePw]     = useState(false);
-  const [showUserMenu, setShowUserMenu]     = useState(false);
+  const [showUserMgmt, setShowUserMgmt] = useState(false);
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   // undefined = closed, null = new, Contact = edit
 
   useEffect(() => {
@@ -75,8 +79,19 @@ export default function App() {
       fetchMeta();
       fetchSelectionGroups();
       fetchTemplates();
+      fetchSettings();
     }
   }, [authUser]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Inactivity timer ────────────────────────────────────────────────────────
+  const handleExpire = useCallback(() => {
+    logout('inactivity');
+  }, [logout]);
+
+  const { warningVisible, remainingSeconds } = useInactivityTimer(
+    authUser ? inactivityTimeout : 0,
+    handleExpire,
+  );
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -242,6 +257,22 @@ export default function App() {
       )}
       {showUserMgmt && <UserManagementModal onClose={() => setShowUserMgmt(false)} />}
       {showChangePw && <ChangePasswordModal onClose={() => setShowChangePw(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
+      {/* Inactivity warning banner */}
+      {warningVisible && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3
+                        bg-amber-600 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-xl">
+          <Timer size={14} />
+          <span>{t.inactivityWarning(remainingSeconds)}</span>
+          <button
+            onClick={() => {/* any click resets the timer via event listener */}}
+            className="bg-white text-amber-700 rounded-full px-3 py-0.5 text-xs font-semibold hover:bg-amber-50 transition-colors"
+          >
+            {t.inactivityWarningBtn}
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <header className="bg-brand-700 text-white px-4 py-2.5 flex items-center gap-3 shrink-0">
@@ -308,12 +339,20 @@ export default function App() {
                 </button>
 
                 {isAdmin && (
-                  <button
-                    onClick={() => { setShowUserMenu(false); setShowUserMgmt(true); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
-                  >
-                    <Settings size={13} /> {t.userMenuManageUsers}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => { setShowUserMenu(false); setShowUserMgmt(true); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+                    >
+                      <Settings size={13} /> {t.userMenuManageUsers}
+                    </button>
+                    <button
+                      onClick={() => { setShowUserMenu(false); setShowSettings(true); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+                    >
+                      <Timer size={13} /> {t.settingsTitle}
+                    </button>
+                  </>
                 )}
 
                 <div className="border-t border-gray-100 mt-1">

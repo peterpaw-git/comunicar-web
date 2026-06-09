@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Clock } from 'lucide-react';
 import { useStore } from '../store';
 import { useT } from '../useT';
 import type { Lang } from '../i18n';
@@ -7,7 +7,7 @@ import type { Lang } from '../i18n';
 const LANG_LABELS: Record<Lang, string> = { it: 'IT 🇮🇹', br: 'BR 🇧🇷' };
 
 export default function LoginPage() {
-  const { login, lang, setLang } = useStore();
+  const { login, lang, setLang, sessionExpired } = useStore();
   const t = useT();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -32,6 +32,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-8">
+        {/* Session-expired notice */}
+        {sessionExpired && (
+          <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            <Clock size={14} className="shrink-0 text-amber-500" />
+            {t.sessionExpiredNotice}
+          </div>
+        )}
+
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-2">
           <div className="bg-brand-700 text-white rounded-full p-3">
