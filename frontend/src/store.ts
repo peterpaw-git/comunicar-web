@@ -88,6 +88,7 @@ interface State {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loadAuth: () => Promise<boolean>;
+  clearMustChangePassword: () => void;
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -130,6 +131,11 @@ export const useStore = create<State>((set, get) => ({
     const { token, user } = await api.auth.login(email, password);
     setAuthToken(token);
     set({ authUser: user, authToken: token });
+  },
+
+  // Called after a successful password change so mustChangePassword clears in-store too
+  clearMustChangePassword: () => {
+    set(s => s.authUser ? { authUser: { ...s.authUser, mustChangePassword: false } } : {});
   },
 
   logout: () => {

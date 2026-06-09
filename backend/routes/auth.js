@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { readJSON, writeJSON } = require('../db');
 const { requireAuth, requireAdmin, SECRET } = require('../middleware/auth');
 
@@ -10,22 +11,40 @@ const USERS_FILE = 'users';
 function getUsers() { return readJSON(USERS_FILE, []); }
 function saveUsers(users) { writeJSON(USERS_FILE, users); }
 
-// Seed default admin on first run
+// Seed default admin on first run — password is randomly generated, never hardcoded
 function ensureDefaultAdmin() {
   const users = getUsers();
   if (users.length === 0) {
-    const hash = bcrypt.hashSync('Comunicar@2026', 10);
-    saveUsers([{ id: 1, email: 'admin@comunicar.app', name: 'Supervisor', role: 'admin', password: hash, active: true }]);
+    // Generate a random 12-char password: letters + digits, easy to type
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const randPwd = Array.from(crypto.randomBytes(12))
+      .map(b => chars[b % chars.length]).join('');
+    const hash = bcrypt.hashSync(randPwd, 10);
+    saveUsers([{
+      id: 1,
+      email: 'admin@comunicar.app',
+      name: 'Supervisor',
+      role: 'admin',
+      password: hash,
+      active: true,
+      mustChangePassword: true,   // force password change on first login
+    }]);
     console.log('');
-    console.log('=== PRIMEIRO ACESSO ===');
-    console.log('Email:  admin@comunicar.app');
-    console.log('Senha:  Comunicar@2026');
-    console.log('Mude a senha após o primeiro login!');
-    console.log('======================');
+    console.log('╔══════════════════════════════╗');
+    console.log('║      PRIMEIRO ACESSO         ║');
+    console.log('╠══════════════════════════════╣');
+    console.log(`║  Email: admin@comunicar.app  ║`);
+    console.log(`║  Senha: ${randPwd.padEnd(20)} ║`);
+    console.log('║  (será pedido trocar a senha)║');
+    console.log('╚══════════════════════════════╝');
     console.log('');
   }
 }
 ensureDefaultAdmin();
+
+function safeUser(u) {
+  return { id: u.id, email: u.email, name: u.name, role: u.role, mustChangePassword: !!u.mustChangePassword };
+}
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -36,7 +55,7 @@ router.post('/login', async (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password))
     return res.status(401).json({ error: 'Email o password non corretti' });
   const token = jwt.sign({ id: user.id, email: user.email, name: user.name, role: user.role }, SECRET(), { expiresIn: '10h' });
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+  res.json({ token, user: safeUser(user) });
 });
 
 // GET /api/auth/me
@@ -44,7 +63,7 @@ router.get('/me', requireAuth, (req, res) => {
   const users = getUsers();
   const user = users.find(u => u.id === req.user.id && u.active);
   if (!user) return res.status(401).json({ error: 'Utente non trovato' });
-  res.json({ id: user.id, email: user.email, name: user.name, role: user.role });
+  res.json(safeUser(user));
 });
 
 // POST /api/auth/change-password
@@ -58,8 +77,9 @@ router.post('/change-password', requireAuth, (req, res) => {
   if (!bcrypt.compareSync(currentPassword, users[idx].password))
     return res.status(401).json({ error: 'Password attuale non corretta' });
   users[idx].password = bcrypt.hashSync(newPassword, 10);
+  users[idx].mustChangePassword = false;   // clear the forced-change flag
   saveUsers(users);
-  res.json({ ok: true });
+  res.json({ ok: true, user: safeUser(users[idx]) });
 });
 
 // ── Admin: user management ────────────────────────────────────────────────────
@@ -77,7 +97,7 @@ router.post('/users', requireAuth, requireAdmin, (req, res) => {
   if (!['admin', 'coordenadora', 'secretaria'].includes(role)) return res.status(400).json({ error: 'Ruolo non valido' });
   const users = getUsers();
   if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) return res.status(409).json({ error: 'Email già registrata' });
-  const newUser = { id: (users.length ? Math.max(...users.map(u => u.id)) + 1 : 1), email, name, role, password: bcrypt.hashSync(password, 10), active: true };
+  const newUser = { id: (users.length ? Math.max(...users.map(u => u.id)) + 1 : 1), email, name, role, password: bcrypt.hashSync(password, 10), active: true, mustChangePassword: true };
   users.push(newUser);
   saveUsers(users);
   const { password: _, ...safe } = newUser;

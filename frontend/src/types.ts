@@ -85,6 +85,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  mustChangePassword?: boolean;
 }
 
 export interface MessageDraft {

@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { X, KeyRound } from 'lucide-react';
+import { X, KeyRound, ShieldAlert } from 'lucide-react';
 import { api } from '../api';
 import { useT } from '../useT';
+import { useStore } from '../store';
 
 interface Props {
+  forced?: boolean;   // true = user MUST change, cannot close/cancel
   onClose: () => void;
 }
 
 const inputCls = 'border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-brand-500 w-full';
 
-export default function ChangePasswordModal({ onClose }: Props) {
+export default function ChangePasswordModal({ forced = false, onClose }: Props) {
   const t = useT();
+  const { clearMustChangePassword } = useStore();
   const [current, setCurrent] = useState('');
   const [next, setNext]       = useState('');
   const [confirm, setConfirm] = useState('');
@@ -26,6 +29,7 @@ export default function ChangePasswordModal({ onClose }: Props) {
     setSaving(true); setError('');
     try {
       await api.auth.changePassword(current, next);
+      clearMustChangePassword();
       setOk(true);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
@@ -35,15 +39,32 @@ export default function ChangePasswordModal({ onClose }: Props) {
     }
   };
 
+  // Forced modals cannot be dismissed by clicking the backdrop
+  const handleBackdropClick = forced ? undefined : onClose;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white rounded-lg shadow-xl w-full max-w-sm flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <h2 className="font-semibold text-gray-800 flex items-center gap-2">
             <KeyRound size={15} /> {t.changePwTitle}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          {/* No close button if forced */}
+          {!forced && (
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          )}
         </div>
+
+        {/* Warning banner when forced */}
+        {forced && !ok && (
+          <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 border-b border-amber-200 text-xs text-amber-800">
+            <ShieldAlert size={15} className="shrink-0 mt-0.5 text-amber-500" />
+            <span>{t.changePwForcedNotice}</span>
+          </div>
+        )}
 
         {ok ? (
           <div className="p-6 text-center">
@@ -71,10 +92,13 @@ export default function ChangePasswordModal({ onClose }: Props) {
             </label>
             {error && <p className="text-xs text-red-600">{error}</p>}
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={onClose}
-                className="text-sm border border-gray-300 rounded px-4 py-1.5 hover:bg-gray-50">
-                {t.userMgmtCancel}
-              </button>
+              {/* Cancel only if not forced */}
+              {!forced && (
+                <button type="button" onClick={onClose}
+                  className="text-sm border border-gray-300 rounded px-4 py-1.5 hover:bg-gray-50">
+                  {t.userMgmtCancel}
+                </button>
+              )}
               <button type="submit" disabled={saving}
                 className="text-sm bg-brand-600 text-white rounded px-4 py-1.5 hover:bg-brand-700 disabled:opacity-50">
                 {saving ? t.changePwSaving : t.changePwSave}

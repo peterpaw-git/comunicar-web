@@ -116,6 +116,15 @@ export default function App() {
     return <LoginPage />;
   }
 
+  // Forced password change — show modal over a blurred app, cannot be dismissed
+  if (authUser.mustChangePassword) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <ChangePasswordModal forced onClose={() => {/* noop — forced */}} />
+      </div>
+    );
+  }
+
   // ── Language selector ────────────────────────────────────────────────────
   const LangSelector = (
     <div className="flex items-center gap-0.5 rounded border border-white/30 overflow-hidden ml-3">

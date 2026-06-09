@@ -184,6 +184,7 @@ const T = {
     changePwErrGeneric:     'Errore cambio password',
     changePwSave:           'Salva',
     changePwSaving:         'Salvataggio...',
+    changePwForcedNotice:   'Per sicurezza devi impostare una nuova password personale prima di continuare.',
 
     // ── Auth — user management modal ──────────────────────────────────────────
     userMgmtTitle:          'Gestione Utenti',
@@ -390,6 +391,7 @@ const T = {
     changePwErrGeneric:     'Erro ao alterar senha',
     changePwSave:           'Salvar',
     changePwSaving:         'Salvando...',
+    changePwForcedNotice:   'Por segurança, você precisa definir uma senha pessoal antes de continuar.',
 
     // ── Auth — user management modal ──────────────────────────────────────────
     userMgmtTitle:          'Gerenciar Usuários',
