@@ -222,12 +222,19 @@ const T = {
     inactivityWarningBtn:       'Continua',
 
     // ── AI message improver ───────────────────────────────────────────────────
-    aiBtn:          '✨ AI',
-    aiImproving:    'Migliorando...',
-    aiUndo:         '↩ Ripristina',
-    aiTooltip:      'Corregge la grammatica, traduce dall\'italiano e aggiunge emoji',
-    aiError:        'Errore AI. Riprova.',
-    aiNoKey:        'Configura OPENAI_API_KEY o ANTHROPIC_API_KEY nel file .env del backend.',
+    aiBtn:            '✨ AI',
+    aiTooltip:        'Apre l\'assistente AI per correggere, tradurre e migliorare il messaggio',
+    aiError:          'Errore AI. Riprova.',
+    aiNoKey:          'Configura OPENAI_API_KEY o ANTHROPIC_API_KEY nel file .env del backend.',
+    aiModalTitle:     'Assistente AI',
+    aiModalOriginal:  '✏️ Testo originale',
+    aiModalImproved:  '✨ Versione migliorata',
+    aiModalUseThis:   '✓ Usa questo come corpo',
+    aiModalProcessing:'Elaborazione AI in corso…',
+    aiModalEditHint:  'Modifica il testo a sinistra per aggiornare la versione AI',
+    aiModalEmpty:     'Scrivi qualcosa a sinistra per avviare l\'AI',
+    aiModalClose:     'Annulla',
+    aiModalRefresh:   '↺ Rielabora',
   },
 
   br: {
@@ -450,12 +457,19 @@ const T = {
     inactivityWarningBtn:       'Continuar',
 
     // ── AI message improver ───────────────────────────────────────────────────
-    aiBtn:          '✨ IA',
-    aiImproving:    'Melhorando...',
-    aiUndo:         '↩ Desfazer',
-    aiTooltip:      'Corrige gramática, traduz do italiano e adiciona emojis',
-    aiError:        'Erro IA. Tente novamente.',
-    aiNoKey:        'Configure OPENAI_API_KEY ou ANTHROPIC_API_KEY no arquivo .env do backend.',
+    aiBtn:            '✨ IA',
+    aiTooltip:        'Abre o assistente IA para corrigir, traduzir e melhorar a mensagem',
+    aiError:          'Erro IA. Tente novamente.',
+    aiNoKey:          'Configure OPENAI_API_KEY ou ANTHROPIC_API_KEY no arquivo .env do backend.',
+    aiModalTitle:     'Assistente IA',
+    aiModalOriginal:  '✏️ Texto original',
+    aiModalImproved:  '✨ Versão melhorada',
+    aiModalUseThis:   '✓ Usar este como corpo',
+    aiModalProcessing:'Processando com IA…',
+    aiModalEditHint:  'Edite o texto à esquerda para atualizar a versão IA',
+    aiModalEmpty:     'Escreva algo à esquerda para iniciar a IA',
+    aiModalClose:     'Cancelar',
+    aiModalRefresh:   '↺ Reprocessar',
   },
 } as const;
 

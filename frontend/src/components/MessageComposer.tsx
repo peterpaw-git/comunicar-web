@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
-import { Send, Save, FolderOpen, Trash2, Image, X, Minimize2, BarChart2, Loader2, Sparkles } from 'lucide-react';
+import { Send, Save, FolderOpen, Trash2, Image, X, Minimize2, BarChart2, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { useStore } from '../store';
 import { useT } from '../useT';
-import { api } from '../api';
 import SendResults from './SendResults';
+import AIImproveModal from './AIImproveModal';
+
 
 const LS_HEIGHT_KEY = 'comunicar-body-height';
 import type { Template } from '../types';
@@ -21,39 +22,8 @@ export default function MessageComposer() {
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── AI state ──────────────────────────────────────────────────────────────
-  const [aiLoading, setAiLoading]   = useState(false);
-  const [aiPrevBody, setAiPrevBody] = useState<string | null>(null); // for undo
-  const [aiError, setAiError]       = useState('');
-  const aiUndoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleAiImprove = async () => {
-    if (!draft.body.trim() || aiLoading) return;
-    setAiLoading(true);
-    setAiError('');
-    try {
-      const { improved } = await api.ai.improve(draft.body);
-      // Save current text for undo
-      setAiPrevBody(draft.body);
-      setDraft({ body: improved });
-      // Auto-clear undo after 20 s
-      if (aiUndoTimer.current) clearTimeout(aiUndoTimer.current);
-      aiUndoTimer.current = setTimeout(() => setAiPrevBody(null), 20_000);
-    } catch (e: unknown) {
-      const data = (e as { response?: { data?: { error?: string; noKey?: boolean } } })?.response?.data;
-      setAiError(data?.noKey ? t.aiNoKey : (data?.error || t.aiError));
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleAiUndo = () => {
-    if (aiPrevBody !== null) {
-      setDraft({ body: aiPrevBody });
-      setAiPrevBody(null);
-      if (aiUndoTimer.current) clearTimeout(aiUndoTimer.current);
-    }
-  };
+  // ── AI modal state ────────────────────────────────────────────────────────
+  const [showAiModal, setShowAiModal] = useState(false);
 
   // null = auto (flex-1 fills available space); number = user manually resized
   const [bodyHeight, setBodyHeight] = useState<number | null>(() => {
@@ -198,33 +168,20 @@ export default function MessageComposer() {
               <label className="text-xs font-semibold text-gray-600 shrink-0">{t.labelBody}</label>
 
               <div className="flex items-center gap-1 ml-auto">
-                {/* ── AI button ── */}
+                {/* ── AI button — opens modal ── */}
                 <button
-                  onClick={handleAiImprove}
-                  disabled={aiLoading || !draft.body.trim()}
+                  onClick={() => setShowAiModal(true)}
+                  disabled={!draft.body.trim()}
                   title={t.aiTooltip}
                   className={clsx(
                     'flex items-center gap-1 text-xs px-2 py-0.5 rounded font-semibold transition-all',
-                    aiLoading
-                      ? 'bg-purple-100 text-purple-400 cursor-wait'
-                      : draft.body.trim()
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                    draft.body.trim()
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                   )}>
-                  {aiLoading
-                    ? <Loader2 size={11} className="animate-spin" />
-                    : <Sparkles size={11} />}
-                  {aiLoading ? t.aiImproving : t.aiBtn}
+                  <Sparkles size={11} />
+                  {t.aiBtn}
                 </button>
-
-                {/* Undo button — visible for 20s after AI runs */}
-                {aiPrevBody !== null && (
-                  <button
-                    onClick={handleAiUndo}
-                    className="text-xs text-purple-600 hover:text-purple-800 underline transition-colors whitespace-nowrap">
-                    {t.aiUndo}
-                  </button>
-                )}
 
                 {/* Reset height */}
                 {bodyHeight !== null && (
@@ -236,16 +193,6 @@ export default function MessageComposer() {
               </div>
             </div>
 
-            {/* AI error message */}
-            {aiError && (
-              <div className="mb-1 px-2 py-1.5 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-start justify-between gap-2 shrink-0">
-                <span>{aiError}</span>
-                <button onClick={() => setAiError('')} className="text-red-400 hover:text-red-600 shrink-0 mt-0.5">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
             <textarea
               ref={textareaRef}
               value={draft.body}
@@ -254,8 +201,7 @@ export default function MessageComposer() {
               placeholder={t.bodyPlaceholder}
               style={bodyHeight ? { height: bodyHeight } : undefined}
               className={clsx(
-                'border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-brand-500 resize-y w-full transition-colors',
-                aiPrevBody !== null ? 'border-purple-300 bg-purple-50/30' : '',
+                'border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-brand-500 resize-y w-full',
                 bodyHeight ? '' : 'flex-1 min-h-[60px]'
               )}
             />
@@ -322,6 +268,18 @@ export default function MessageComposer() {
           </button>
         )}
       </div>
+
+      {/* ── AI Improve Modal ── */}
+      {showAiModal && (
+        <AIImproveModal
+          initialText={draft.body}
+          onAccept={(text) => {
+            setDraft({ body: text });
+            setShowAiModal(false);
+          }}
+          onClose={() => setShowAiModal(false)}
+        />
+      )}
     </div>
   );
 }
