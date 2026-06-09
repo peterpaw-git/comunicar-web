@@ -111,7 +111,8 @@ router.post('/send', async (req, res) => {
 
 // POST /api/whatsapp/webhook — receives incoming messages from Evolution GO
 // Also forwards to WEBHOOK_FORWARD_URL if configured (relay mode)
-router.post('/webhook', (req, res) => {
+// NOTE: this handler is exported separately and mounted WITHOUT auth in server.js
+function webhookHandler(req, res) {
   // Forward to original webhook (e.g. Supabase) if configured — fire and forget
   const forwardUrl = process.env.WEBHOOK_FORWARD_URL;
   if (forwardUrl) {
@@ -157,7 +158,8 @@ router.post('/webhook', (req, res) => {
     console.error('Webhook error:', e.message);
     res.sendStatus(200); // always 200 to Evolution
   }
-});
+}
+router.post('/webhook', webhookHandler);
 
 // GET /api/whatsapp/events — SSE stream for real-time messages
 router.get('/events', (req, res) => {
@@ -170,4 +172,5 @@ router.get('/events', (req, res) => {
   req.on('close', () => sseClients.delete(res));
 });
 
-module.exports = router;
+// Export router (protected, mounted under /api/whatsapp) and webhookHandler (public, mounted directly)
+module.exports = { router, webhookHandler };

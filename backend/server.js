@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { contacts, importCSV } = require('./db');
+const { requireAuth, requireNotSecretaria } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,14 +14,24 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 
-app.use('/api/contacts',        require('./routes/contacts'));
-app.use('/api/selection-groups', require('./routes/selectionGroups'));
-app.use('/api/templates',       require('./routes/templates'));
-app.use('/api/send',            require('./routes/send'));
-app.use('/api/history',         require('./routes/history'));
-app.use('/api/whatsapp',        require('./routes/whatsapp'));
+// ── Public routes (no auth) ───────────────────────────────────────────────────
+app.use('/api/auth', require('./routes/auth'));
 
-// Status: tells frontend whether media sending is available
+// Webhook from Evolution GO — must stay public (no Bearer header from Evolution)
+app.post('/api/whatsapp/webhook', require('./routes/whatsapp').webhookHandler);
+
+// ── Auth guard for everything else ────────────────────────────────────────────
+app.use('/api', requireAuth);
+
+// ── Protected routes ──────────────────────────────────────────────────────────
+app.use('/api/contacts',         require('./routes/contacts'));
+app.use('/api/selection-groups', require('./routes/selectionGroups'));
+app.use('/api/templates',        require('./routes/templates'));
+app.use('/api/send',             require('./routes/send'));
+app.use('/api/history',          require('./routes/history'));
+app.use('/api/whatsapp',         require('./routes/whatsapp').router);
+
+// Status
 app.get('/api/status', (req, res) => {
   require('dotenv').config({ path: path.join(__dirname, '.env'), override: true });
   res.json({
@@ -31,12 +42,13 @@ app.get('/api/status', (req, res) => {
 
 const upload = multer({ dest: path.join(__dirname, 'uploads') });
 
-// Serve temp media files for Evolution GO (used when tunnel is active)
+// Serve temp media files
 const tmpDir = path.join(__dirname, 'uploads/tmp');
 if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 app.use('/tmp', express.static(tmpDir));
 
-app.post('/api/import', upload.single('csv'), (req, res) => {
+// Import CSV — blocked for secretaria
+app.post('/api/import', requireNotSecretaria, upload.single('csv'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Nessun file caricato' });
   try {
     const count = importCSV(req.file.path);
@@ -47,7 +59,8 @@ app.post('/api/import', upload.single('csv'), (req, res) => {
   }
 });
 
-app.get('/api/export', (req, res) => {
+// Export CSV — blocked for secretaria
+app.get('/api/export', requireNotSecretaria, (req, res) => {
   const all = contacts.all();
   const header = 'ID_PROG;ATTIVO;DA_FARE;FATTO;RESPONSABILE;FILHOS;GRUPPO;CPF;GRUPPO2;EMAIL_1;EMAIL_2;WHATS_MAE;WHATS_PAI;BOLETO;VOTI;PROGRESSIVO;PREF_INT1;PREF_INT2';
   const q = v => `"${v ?? ''}"`;

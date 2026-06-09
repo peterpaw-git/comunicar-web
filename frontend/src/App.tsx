@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Search, X, Upload, Download, CheckSquare, Square, Users, MessageSquare, BarChart2, RefreshCw, UserPlus, Trash2, History, Sun, Moon, MessageCircle } from 'lucide-react';
+import { Search, X, Upload, Download, CheckSquare, Square, Users, MessageSquare, BarChart2, RefreshCw, UserPlus, Trash2, History, Sun, Moon, MessageCircle, LogOut, Settings } from 'lucide-react';
 import clsx from 'clsx';
 import { useStore } from './store';
 import { useT } from './useT';
@@ -12,6 +12,8 @@ import SelectionGroupsPanel from './components/SelectionGroupsPanel';
 import HistoryPanel from './components/HistoryPanel';
 import SendConfirmModal from './components/SendConfirmModal';
 import ChatDashboard from './components/ChatDashboard';
+import LoginPage from './components/LoginPage';
+import UserManagementModal from './components/UserManagementModal';
 import type { Contact } from './types';
 
 type AppMode = 'comunicar' | 'chat';
@@ -28,13 +30,31 @@ export default function App() {
     fetchContacts, fetchMeta, fetchSelectionGroups, fetchTemplates,
     markFatto, importCSV, deleteContacts,
     lang, setLang, theme, setTheme,
+    authUser, authLoading, loadAuth, logout,
   } = useStore();
   const t = useT();
+
+  // ── Auth init ──────────────────────────────────────────────────────────────
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    loadAuth().finally(() => setAuthChecked(true));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Listen for 401 from API interceptor
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener('comunicar:unauthorized', handler);
+    return () => window.removeEventListener('comunicar:unauthorized', handler);
+  }, [logout]);
 
   // Apply persisted theme on mount
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isSecretaria = authUser?.role === 'secretaria';
+  const isAdmin      = authUser?.role === 'admin';
 
   const [appMode, setAppMode] = useState<AppMode>('comunicar');
   const [mobileTab, setMobileTab] = useState<MobileTab>('contacts');
@@ -43,14 +63,17 @@ export default function App() {
   const [importMsg, setImportMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [modalContact, setModalContact] = useState<Contact | null | undefined>(undefined);
+  const [showUserMgmt, setShowUserMgmt] = useState(false);
   // undefined = closed, null = new, Contact = edit
 
   useEffect(() => {
-    fetchContacts();
-    fetchMeta();
-    fetchSelectionGroups();
-    fetchTemplates();
-  }, []);
+    if (authUser) {
+      fetchContacts();
+      fetchMeta();
+      fetchSelectionGroups();
+      fetchTemplates();
+    }
+  }, [authUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +99,19 @@ export default function App() {
     if (!window.confirm(t.confirmDelete(ids.length))) return;
     await deleteContacts(ids);
   };
+
+  // ── Render: loading / not authenticated ───────────────────────────────────
+  if (!authChecked || authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-gray-400 text-sm">Caricamento…</div>
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return <LoginPage />;
+  }
 
   // ── Language selector ────────────────────────────────────────────────────
   const LangSelector = (
@@ -142,10 +178,13 @@ export default function App() {
             className="text-xs bg-gray-200 text-gray-700 rounded px-2 py-1 hover:bg-gray-300">
             {t.unmarkDone}
           </button>
-          <button onClick={handleDelete}
-            className="flex items-center gap-1 text-xs bg-red-500 text-white rounded px-2 py-1 hover:bg-red-600">
-            <Trash2 size={12} /> {t.deleteSelected(selectedIds.size)}
-          </button>
+          {/* Delete: hidden for secretaria */}
+          {!isSecretaria && (
+            <button onClick={handleDelete}
+              className="flex items-center gap-1 text-xs bg-red-500 text-white rounded px-2 py-1 hover:bg-red-600">
+              <Trash2 size={12} /> {t.deleteSelected(selectedIds.size)}
+            </button>
+          )}
         </>
       )}
 
@@ -164,7 +203,8 @@ export default function App() {
     </div>
   );
 
-  const ImportBar = (
+  // Import/export bar — hidden for secretaria
+  const ImportBar = !isSecretaria ? (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
       <button onClick={() => fileRef.current?.click()} disabled={importing}
         className="flex items-center gap-1 text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-40">
@@ -177,7 +217,7 @@ export default function App() {
       {importMsg && <span className="text-xs text-brand-700">{importMsg}</span>}
       <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
     </div>
-  );
+  ) : null;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -188,6 +228,8 @@ export default function App() {
           onClose={() => setModalContact(undefined)}
         />
       )}
+      {showUserMgmt && <UserManagementModal onClose={() => setShowUserMgmt(false)} />}
+
       {/* Header */}
       <header className="bg-brand-700 text-white px-4 py-2.5 flex items-center gap-3 shrink-0">
         <MessageSquare size={18} />
@@ -208,6 +250,7 @@ export default function App() {
         </div>
 
         <span className="text-brand-200 text-xs ml-auto hidden sm:block">{t.appSubtitle}</span>
+
         {/* Theme toggle */}
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -216,7 +259,32 @@ export default function App() {
         >
           {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
+
         {LangSelector}
+
+        {/* User menu */}
+        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-white/20">
+          <span className="text-xs text-white/80 hidden sm:block">
+            {authUser.name}
+            <span className="ml-1 text-white/40">({authUser.role})</span>
+          </span>
+          {isAdmin && (
+            <button
+              onClick={() => setShowUserMgmt(true)}
+              title="Gestione Utenti"
+              className="p-1.5 rounded text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+            >
+              <Settings size={15} />
+            </button>
+          )}
+          <button
+            onClick={logout}
+            title="Logout"
+            className="p-1.5 rounded text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
       </header>
 
       {/* ── CHAT MODE ── */}

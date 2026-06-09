@@ -346,7 +346,7 @@ export default function ChatDashboard() {
 
   // SSE — real-time incoming messages
   useEffect(() => {
-    const es = new EventSource('/api/whatsapp/events');
+    const es = new EventSource(api.whatsapp.eventsUrl());
     es.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === 'message') {

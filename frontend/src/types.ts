@@ -78,6 +78,15 @@ export interface ChatContact {
   unreadCount: number;
 }
 
+export type UserRole = 'admin' | 'coordenadora' | 'secretaria';
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
 export interface MessageDraft {
   title: string;
   body: string;

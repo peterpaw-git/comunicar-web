@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { api } from './api';
+import { api, setAuthToken } from './api';
 import type { SortingState } from '@tanstack/react-table';
-import type { Contact, SelectionGroup, Template, MessageDraft, SendResult, HistoryEntry } from './types';
+import type { Contact, SelectionGroup, Template, MessageDraft, SendResult, HistoryEntry, AuthUser } from './types';
 import type { Lang } from './i18n';
 
 interface State {
@@ -80,6 +80,14 @@ interface State {
 
   theme: 'light' | 'dark';
   setTheme: (t: 'light' | 'dark') => void;
+
+  // ── Auth ────────────────────────────────────────────────────────────────
+  authUser: AuthUser | null;
+  authToken: string | null;
+  authLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  loadAuth: () => Promise<boolean>;
 }
 
 export const useStore = create<State>((set, get) => ({
@@ -112,6 +120,36 @@ export const useStore = create<State>((set, get) => ({
     set({ theme: t });
     localStorage.setItem('comunicar-theme', t);
     document.documentElement.classList.toggle('dark', t === 'dark');
+  },
+
+  authUser: null,
+  authToken: localStorage.getItem('comunicar-token'),
+  authLoading: false,
+
+  login: async (email, password) => {
+    const { token, user } = await api.auth.login(email, password);
+    setAuthToken(token);
+    set({ authUser: user, authToken: token });
+  },
+
+  logout: () => {
+    setAuthToken(null);
+    set({ authUser: null, authToken: null });
+  },
+
+  loadAuth: async () => {
+    const token = localStorage.getItem('comunicar-token');
+    if (!token) { set({ authLoading: false }); return false; }
+    set({ authLoading: true });
+    try {
+      const user = await api.auth.me();
+      set({ authUser: user, authToken: token, authLoading: false });
+      return true;
+    } catch {
+      setAuthToken(null);
+      set({ authUser: null, authToken: null, authLoading: false });
+      return false;
+    }
   },
 
   sending: false,
@@ -239,7 +277,7 @@ export const useStore = create<State>((set, get) => ({
     const { jobId, total } = await api.send.start(ids, draft);
     set({ jobId });
 
-    const es = new EventSource(`/api/send/${jobId}/events`);
+    const es = new EventSource(api.sseUrl(`/api/send/${jobId}/events`));
     es.onmessage = (e) => {
       const data = JSON.parse(e.data);
       set(s => ({

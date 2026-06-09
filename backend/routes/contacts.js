@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { contacts } = require('../db');
+const { requireNotSecretaria } = require('../middleware/auth');
 
 router.get('/', (req, res) => {
   const { search = '', gruppo = '', attivo = '' } = req.query;
@@ -81,14 +82,14 @@ router.put('/:id', (req, res) => {
   }
 });
 
-router.delete('/', (req, res) => {
+router.delete('/', requireNotSecretaria, (req, res) => {
   const { ids } = req.body;
   if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'ids required' });
   const n = contacts.remove(ids);
   res.json({ ok: true, deleted: n });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireNotSecretaria, (req, res) => {
   contacts.remove([req.params.id]);
   res.json({ ok: true });
 });
