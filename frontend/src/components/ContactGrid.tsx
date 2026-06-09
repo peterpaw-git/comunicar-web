@@ -1,7 +1,7 @@
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
   flexRender,
-  type ColumnDef,
+  type ColumnDef, type SortingState, type Updater,
 } from '@tanstack/react-table';
 import { useMemo, useEffect } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Pencil } from 'lucide-react';
@@ -102,7 +102,8 @@ export default function ContactGrid({ onEdit }: Props) {
     data: contacts,
     columns,
     state: { sorting, columnVisibility: { progressivo: false, id: false } },
-    onSortingChange: updater => setSorting(prev => typeof updater === 'function' ? updater(prev) : updater),
+    onSortingChange: (updater: Updater<SortingState>) =>
+      setSorting(typeof updater === 'function' ? updater(sorting) : updater),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
