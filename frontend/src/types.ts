@@ -66,6 +66,8 @@ export interface ChatMessage {
   read: boolean;
   contactId?: number | null;
   bulk?: boolean;
+  mediaType?: 'image' | 'video' | 'document' | 'audio' | 'sticker' | null;
+  whatsappMsgId?: string | null;
 }
 
 export interface ChatContact {

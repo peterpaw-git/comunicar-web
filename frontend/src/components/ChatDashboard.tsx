@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, Send, MessageCircle, ChevronLeft, X, Users } from 'lucide-react';
 import clsx from 'clsx';
-import { api } from '../api';
+import { api, getAuthToken } from '../api';
 import { useT } from '../useT';
 import type { ChatContact, ChatMessage } from '../types';
+
+// Small hook to provide auth token to child components
+function useAuthToken() { return { getAuthToken }; }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function formatTime(ts: string): string {
@@ -80,9 +83,32 @@ function ContactRow({ chat, selected, onClick }: {
   );
 }
 
+// ── Media icons ───────────────────────────────────────────────────────────────
+const MEDIA_ICON: Record<string, string> = {
+  image: '🖼️', video: '🎥', document: '📄', audio: '🎵', sticker: '🎭',
+};
+
 // ── MessageBubble ─────────────────────────────────────────────────────────────
-function MessageBubble({ msg }: { msg: ChatMessage }) {
+function MessageBubble({ msg, jid }: { msg: ChatMessage; jid: string }) {
   const isOut = msg.direction === 'out';
+  const [imgSrc, setImgSrc]     = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
+  const [imgLoading, setImgLoading] = useState(false);
+  const { getAuthToken } = useAuthToken();
+
+  // Lazy-load image media
+  useEffect(() => {
+    if (msg.mediaType !== 'image' || !msg.whatsappMsgId || imgSrc || imgError) return;
+    setImgLoading(true);
+    const token = getAuthToken();
+    const url = `/api/whatsapp/media?msgId=${encodeURIComponent(msg.whatsappMsgId)}&jid=${encodeURIComponent(jid)}&token=${encodeURIComponent(token ?? '')}`;
+    fetch(url)
+      .then(r => { if (!r.ok) throw new Error('not ok'); return r.blob(); })
+      .then(blob => setImgSrc(URL.createObjectURL(blob)))
+      .catch(() => setImgError(true))
+      .finally(() => setImgLoading(false));
+  }, [msg.mediaType, msg.whatsappMsgId, jid]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className={clsx('flex', isOut ? 'justify-end' : 'justify-start')}>
       <div className={clsx(
@@ -97,11 +123,49 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           <span className={clsx(
             'text-[9px] font-semibold uppercase tracking-wide block mb-0.5',
             isOut ? 'text-white/60' : 'text-gray-400'
-          )}>
-            bulk
-          </span>
+          )}>bulk</span>
         )}
-        <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.text}</p>
+
+        {/* ── Media content ── */}
+        {msg.mediaType === 'image' && (
+          <div className="mb-1">
+            {imgLoading && (
+              <div className="w-40 h-28 bg-black/10 rounded-lg flex items-center justify-center">
+                <span className="text-xs opacity-60">⏳</span>
+              </div>
+            )}
+            {imgSrc && !imgLoading && (
+              <img
+                src={imgSrc}
+                alt="media"
+                className="rounded-lg max-w-full max-h-60 object-contain cursor-pointer"
+                onClick={() => window.open(imgSrc, '_blank')}
+              />
+            )}
+            {imgError && !imgLoading && (
+              <div className="flex items-center gap-1.5 text-xs opacity-70">
+                <span>{MEDIA_ICON.image}</span>
+                <span>Immagine</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {msg.mediaType && msg.mediaType !== 'image' && (
+          <div className={clsx(
+            'flex items-center gap-1.5 mb-1 px-2 py-1.5 rounded-lg text-xs',
+            isOut ? 'bg-white/10' : 'bg-gray-100'
+          )}>
+            <span className="text-base">{MEDIA_ICON[msg.mediaType] ?? '📎'}</span>
+            <span className="capitalize opacity-80">{msg.mediaType}</span>
+          </div>
+        )}
+
+        {/* ── Text / caption ── */}
+        {msg.text ? (
+          <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.text}</p>
+        ) : null}
+
         <p className={clsx('text-[10px] mt-0.5 text-right leading-none', isOut ? 'text-white/70' : 'text-gray-400')}>
           {formatFull(msg.timestamp)}
           {isOut && msg.status === 'error' && ' ⚠'}
@@ -265,7 +329,7 @@ function Thread({ jid, chat, onBack }: {
             <p className="text-xs">{t.chatNoMessages}</p>
           </div>
         )}
-        {messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)}
+        {messages.map(msg => <MessageBubble key={msg.id} msg={msg} jid={jid} />)}
         <div ref={bottomRef} />
       </div>
 

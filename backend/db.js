@@ -216,14 +216,16 @@ const conversations = {
     const all = readJSON('conversations', {});
     if (!all[jid]) all[jid] = { messages: [] };
     const message = {
-      id:        crypto.randomUUID(),
-      direction: msg.direction ?? 'out',
-      text:      msg.text ?? '',
-      timestamp: msg.timestamp ?? new Date().toISOString(),
-      status:    msg.status ?? 'sent',
-      read:      msg.direction === 'in' ? false : true,
-      contactId: msg.contactId ?? null,
-      bulk:      msg.bulk ?? false,
+      id:             crypto.randomUUID(),
+      direction:      msg.direction ?? 'out',
+      text:           msg.text ?? '',
+      timestamp:      msg.timestamp ?? new Date().toISOString(),
+      status:         msg.status ?? 'sent',
+      read:           msg.direction === 'in' ? false : true,
+      contactId:      msg.contactId ?? null,
+      bulk:           msg.bulk ?? false,
+      mediaType:      msg.mediaType ?? null,       // 'image'|'video'|'document'|'audio'|'sticker'
+      whatsappMsgId:  msg.whatsappMsgId ?? null,   // original WA message ID for media download
     };
     all[jid].messages.push(message);
     // Keep last 500 messages per conversation

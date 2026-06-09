@@ -81,6 +81,41 @@ router.get('/messages/:jid', (req, res) => {
   res.json(conversations.getMessages(jid));
 });
 
+// GET /api/whatsapp/media?msgId=xxx&jid=xxx&token=xxx
+// Proxy: downloads media from Evolution GO and returns it as binary
+// Note: token in query param because this is loaded as <img src>
+router.get('/media', async (req, res) => {
+  const { msgId, jid } = req.query;
+  if (!msgId || !jid) return res.status(400).json({ error: 'msgId and jid required' });
+
+  const BASE = () => process.env.EVOLUTION_URL?.replace(/\/$/, '');
+  const KEY  = () => process.env.EVOLUTION_APIKEY;
+
+  // Try Evolution GO / standard Evolution API download endpoint
+  try {
+    const fullJid = jid.includes('@') ? jid : `${jid}@s.whatsapp.net`;
+    const dlRes = await require('node-fetch')(`${BASE()}/chat/getBase64FromMediaMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: KEY() },
+      body: JSON.stringify({
+        message: { key: { id: msgId, remoteJid: fullJid } },
+        convertToMp4: false,
+      }),
+    });
+    if (!dlRes.ok) throw new Error(`Evolution HTTP ${dlRes.status}`);
+    const dlData = await dlRes.json();
+    const b64 = dlData.base64 || dlData.data;
+    if (!b64) throw new Error('No base64 in response');
+    const buf = Buffer.from(b64, 'base64');
+    res.setHeader('Content-Type', dlData.mimetype || 'application/octet-stream');
+    res.setHeader('Cache-Control', 'max-age=3600');
+    return res.send(buf);
+  } catch (e) {
+    console.warn('[media proxy]', e.message);
+    return res.status(404).json({ error: 'Media not available', detail: e.message });
+  }
+});
+
 // POST /api/whatsapp/send
 router.post('/send', async (req, res) => {
   const { jid, text, contactId } = req.body;
@@ -135,13 +170,25 @@ function webhookHandler(req, res) {
     const jidClean = remoteJid.replace(/@.*$/, '');
     if (!remoteJid || jidClean === 'status') return res.sendStatus(200);
 
-    // Extract text — Evolution GO uses data.Message (capital M)
+    // Evolution GO message ID
+    const whatsappMsgId = data?.Info?.ID ?? data?.key?.id ?? null;
+
+    // Extract message object and detect media type
     const msgObj = data?.Message ?? data?.message ?? {};
+    let mediaType = null;
+    if      (msgObj.imageMessage)    mediaType = 'image';
+    else if (msgObj.videoMessage)    mediaType = 'video';
+    else if (msgObj.documentMessage) mediaType = 'document';
+    else if (msgObj.audioMessage || msgObj.pttMessage) mediaType = 'audio';
+    else if (msgObj.stickerMessage)  mediaType = 'sticker';
+
+    // Extract text / caption
     const text = msgObj.conversation
       || msgObj.extendedTextMessage?.text
       || msgObj.imageMessage?.caption
+      || msgObj.videoMessage?.caption
       || msgObj.documentMessage?.caption
-      || '[Media]';
+      || (mediaType ? '' : '[Media]');
 
     const jid = jidClean;
     const direction = fromMe ? 'out' : 'in';
@@ -149,7 +196,9 @@ function webhookHandler(req, res) {
     const message = conversations.addMessage(jid, {
       direction,
       text,
-      read: direction === 'out', // outgoing = already read
+      read: direction === 'out',
+      mediaType,
+      whatsappMsgId,
     });
 
     pushToClients({ type: 'message', jid, message });
