@@ -220,6 +220,14 @@ const T = {
     sessionExpiredNotice:       'Sessione scaduta per inattività. Accedi di nuovo.',
     inactivityWarning:          (s: number) => `Sessione in scadenza tra ${s} s. Clicca per continuare.`,
     inactivityWarningBtn:       'Continua',
+
+    // ── AI message improver ───────────────────────────────────────────────────
+    aiBtn:          '✨ AI',
+    aiImproving:    'Migliorando...',
+    aiUndo:         '↩ Ripristina',
+    aiTooltip:      'Corregge la grammatica, traduce dall\'italiano e aggiunge emoji',
+    aiError:        'Errore AI. Riprova.',
+    aiNoKey:        'Configura OPENAI_API_KEY o ANTHROPIC_API_KEY nel file .env del backend.',
   },
 
   br: {
@@ -440,6 +448,14 @@ const T = {
     sessionExpiredNotice:       'Sessão expirada por inatividade. Faça login novamente.',
     inactivityWarning:          (s: number) => `Sessão expira em ${s} s. Clique para continuar.`,
     inactivityWarningBtn:       'Continuar',
+
+    // ── AI message improver ───────────────────────────────────────────────────
+    aiBtn:          '✨ IA',
+    aiImproving:    'Melhorando...',
+    aiUndo:         '↩ Desfazer',
+    aiTooltip:      'Corrige gramática, traduz do italiano e adiciona emojis',
+    aiError:        'Erro IA. Tente novamente.',
+    aiNoKey:        'Configure OPENAI_API_KEY ou ANTHROPIC_API_KEY no arquivo .env do backend.',
   },
 } as const;
 

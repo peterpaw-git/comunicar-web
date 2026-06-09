@@ -157,6 +157,14 @@ export const api = {
     },
   },
 
+  ai: {
+    status: () =>
+      ax.get<{ available: boolean; provider: string | null }>('/ai/status').then(r => r.data),
+
+    improve: (text: string) =>
+      ax.post<{ improved: string }>('/ai/improve', { text }).then(r => r.data),
+  },
+
   settings: {
     get: () =>
       ax.get<{ inactivityTimeout: number }>('/settings').then(r => r.data),

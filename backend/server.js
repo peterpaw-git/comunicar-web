@@ -25,6 +25,7 @@ app.use('/api', requireAuth);
 
 // ── Protected routes ──────────────────────────────────────────────────────────
 app.use('/api/settings',         require('./routes/settings'));
+app.use('/api/ai',               require('./routes/ai'));
 app.use('/api/contacts',         require('./routes/contacts'));
 app.use('/api/selection-groups', require('./routes/selectionGroups'));
 app.use('/api/templates',        require('./routes/templates'));
