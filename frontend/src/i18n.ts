@@ -153,6 +153,59 @@ const T = {
     confirmEstTime:    'Tempo stimato',
     cancelBtn:         'Annulla',
     sendNowBtn:        'Invia ora',
+
+    // ── Auth — login page ─────────────────────────────────────────────────────
+    loginSubtitle:  'Colégio Montessori Rainha',
+    loginEmail:     'E-mail',
+    loginPassword:  'Password',
+    loginButton:    'Accedi',
+    loginLoading:   'Accesso...',
+    loginError:     'Email o password non corretti',
+
+    // ── Auth — app loading ────────────────────────────────────────────────────
+    authLoading:    'Caricamento...',
+
+    // ── Auth — user dropdown ──────────────────────────────────────────────────
+    userMenuChangePassword: 'Cambia password',
+    userMenuManageUsers:    'Gestione utenti',
+    userMenuLogout:         'Logout',
+
+    // ── Auth — change-password modal ──────────────────────────────────────────
+    changePwTitle:          'Cambia Password',
+    changePwCurrent:        'Password attuale',
+    changePwNew:            'Nuova password',
+    changePwNewHint:        'min 6 caratteri',
+    changePwConfirm:        'Conferma nuova password',
+    changePwSuccess:        'Password aggiornata con successo!',
+    changePwClose:          'Chiudi',
+    changePwErrEmpty:       'Compila tutti i campi',
+    changePwErrShort:       'Minimo 6 caratteri',
+    changePwErrMismatch:    'Le password non coincidono',
+    changePwErrGeneric:     'Errore cambio password',
+    changePwSave:           'Salva',
+    changePwSaving:         'Salvataggio...',
+
+    // ── Auth — user management modal ──────────────────────────────────────────
+    userMgmtTitle:          'Gestione Utenti',
+    userMgmtNewTitle:       'Nuovo Utente',
+    userMgmtEditTitle:      (name: string) => `Modifica: ${name}`,
+    userMgmtNewBtn:         'Nuovo utente',
+    userMgmtColName:        'Nome',
+    userMgmtColEmail:       'E-mail',
+    userMgmtColRole:        'Ruolo',
+    userMgmtFieldEmail:     'E-mail',
+    userMgmtFieldName:      'Nome',
+    userMgmtFieldRole:      'Ruolo',
+    userMgmtFieldPassword:  'Password',
+    userMgmtPwHint:         'min 6 caratteri',
+    userMgmtPwOptional:     'lascia vuoto per non cambiare',
+    userMgmtErrRequired:    'Tutti i campi sono obbligatori',
+    userMgmtErrCreate:      'Errore creazione utente',
+    userMgmtErrUpdate:      'Errore aggiornamento',
+    userMgmtConfirmDelete:  (name: string) => `Eliminare l\'utente ${name}?`,
+    userMgmtCancel:         'Annulla',
+    userMgmtSaving:         'Salvataggio...',
+    userMgmtSave:           'Salva',
   },
 
   br: {
@@ -306,6 +359,59 @@ const T = {
     confirmEstTime:    'Tempo estimado',
     cancelBtn:         'Cancelar',
     sendNowBtn:        'Enviar agora',
+
+    // ── Auth — login page ─────────────────────────────────────────────────────
+    loginSubtitle:  'Colégio Montessori Rainha',
+    loginEmail:     'E-mail',
+    loginPassword:  'Senha',
+    loginButton:    'Entrar',
+    loginLoading:   'Entrando...',
+    loginError:     'E-mail ou senha incorretos',
+
+    // ── Auth — app loading ────────────────────────────────────────────────────
+    authLoading:    'Carregando...',
+
+    // ── Auth — user dropdown ──────────────────────────────────────────────────
+    userMenuChangePassword: 'Alterar senha',
+    userMenuManageUsers:    'Gerenciar usuários',
+    userMenuLogout:         'Sair',
+
+    // ── Auth — change-password modal ──────────────────────────────────────────
+    changePwTitle:          'Alterar Senha',
+    changePwCurrent:        'Senha atual',
+    changePwNew:            'Nova senha',
+    changePwNewHint:        'mín 6 caracteres',
+    changePwConfirm:        'Confirmar nova senha',
+    changePwSuccess:        'Senha atualizada com sucesso!',
+    changePwClose:          'Fechar',
+    changePwErrEmpty:       'Preencha todos os campos',
+    changePwErrShort:       'Mínimo 6 caracteres',
+    changePwErrMismatch:    'As senhas não coincidem',
+    changePwErrGeneric:     'Erro ao alterar senha',
+    changePwSave:           'Salvar',
+    changePwSaving:         'Salvando...',
+
+    // ── Auth — user management modal ──────────────────────────────────────────
+    userMgmtTitle:          'Gerenciar Usuários',
+    userMgmtNewTitle:       'Novo Usuário',
+    userMgmtEditTitle:      (name: string) => `Editar: ${name}`,
+    userMgmtNewBtn:         'Novo usuário',
+    userMgmtColName:        'Nome',
+    userMgmtColEmail:       'E-mail',
+    userMgmtColRole:        'Perfil',
+    userMgmtFieldEmail:     'E-mail',
+    userMgmtFieldName:      'Nome',
+    userMgmtFieldRole:      'Perfil',
+    userMgmtFieldPassword:  'Senha',
+    userMgmtPwHint:         'mín 6 caracteres',
+    userMgmtPwOptional:     'deixe em branco para não alterar',
+    userMgmtErrRequired:    'Todos os campos são obrigatórios',
+    userMgmtErrCreate:      'Erro ao criar usuário',
+    userMgmtErrUpdate:      'Erro ao atualizar',
+    userMgmtConfirmDelete:  (name: string) => `Excluir o usuário ${name}?`,
+    userMgmtCancel:         'Cancelar',
+    userMgmtSaving:         'Salvando...',
+    userMgmtSave:           'Salvar',
   },
 } as const;
 
