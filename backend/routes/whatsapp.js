@@ -125,17 +125,16 @@ router.post('/webhook', (req, res) => {
 
   try {
     const payload = req.body;
-    console.log('[webhook] received:', JSON.stringify(payload).slice(0, 300));
     const data = payload?.data ?? payload;
 
-    // Extract remoteJid and check fromMe
-    const remoteJid = data?.key?.remoteJid ?? data?.remoteJid ?? '';
-    const fromMe   = data?.key?.fromMe ?? data?.fromMe ?? false;
-    console.log('[webhook] remoteJid:', remoteJid, 'fromMe:', fromMe);
+    // Evolution GO (whatsmeow) uses data.Info.Chat / data.Info.IsFromMe
+    // Fallback to standard Evolution API format (data.key.remoteJid)
+    const remoteJid = data?.Info?.Chat ?? data?.key?.remoteJid ?? data?.remoteJid ?? '';
+    const fromMe    = data?.Info?.IsFromMe ?? data?.key?.fromMe ?? data?.fromMe ?? false;
     if (!remoteJid || fromMe) return res.sendStatus(200);
 
-    // Extract text from various message types
-    const msgObj = data?.message ?? {};
+    // Extract text — Evolution GO uses data.Message (capital M)
+    const msgObj = data?.Message ?? data?.message ?? {};
     const text = msgObj.conversation
       || msgObj.extendedTextMessage?.text
       || msgObj.imageMessage?.caption
