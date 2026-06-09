@@ -1,0 +1,11 @@
+{
+  "name": "comunicar-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev": "start \"backend\" cmd /k \"cd backend && npm run dev\" && start \"frontend\" cmd /k \"cd frontend && npm run dev\"",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start"
+  }
+}

@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-size: 14px; }
+  body { @apply bg-gray-100 text-gray-900; }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { @apply bg-gray-100; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-gray-400 rounded; }
+}
+
+/* ─── DARK MODE OVERRIDES ──────────────────────────────────────────────────────
+   Strategy: override Tailwind utility classes under .dark to avoid modifying
+   every component. Specificity 0-2-0 beats Tailwind's 0-1-0 consistently.
+   Palette: cool blue-gray (à la VS Code Dark+)
+────────────────────────────────────────────────────────────────────────────── */
+
+/* Body / root */
+.dark body { background-color: #0f172a; color: #f1f5f9; }
+
+/* ── Background overrides ─────────────────────────────────────────────────── */
+.dark .bg-white        { background-color: #1e293b; }
+.dark .bg-gray-50      { background-color: #263045; }
+.dark .bg-gray-100     { background-color: #2d3a4f; }
+.dark .bg-gray-200     { background-color: #374e66; }
+
+/* hover backgrounds */
+.dark .hover\:bg-white:hover        { background-color: #253247; }
+.dark .hover\:bg-gray-50:hover      { background-color: #2d3a4f; }
+.dark .hover\:bg-gray-100:hover     { background-color: #374e66; }
+
+/* focus backgrounds (inputs use focus states) */
+.dark .focus\:bg-white:focus { background-color: #1e293b; }
+
+/* brand tints */
+.dark .bg-brand-50     { background-color: #0d2618; }
+.dark .bg-brand-100    { background-color: #163a26; }
+
+/* status / alert tints */
+.dark .bg-amber-50     { background-color: #221900; }
+.dark .bg-red-50       { background-color: #1a0a0a; }
+.dark .bg-green-100    { background-color: #0a2010; }
+.dark .bg-blue-100     { background-color: #0a1529; }
+
+/* selected row */
+.dark .bg-brand-100    { background-color: #163a26; }
+
+/* ── Text overrides ───────────────────────────────────────────────────────── */
+.dark .text-gray-900   { color: #f1f5f9; }
+.dark .text-gray-800   { color: #e2e8f0; }
+.dark .text-gray-700   { color: #cbd5e1; }
+.dark .text-gray-600   { color: #94a3b8; }
+.dark .text-gray-500   { color: #64748b; }
+.dark .text-gray-400   { color: #475569; }
+.dark .text-gray-300   { color: #334155; }
+
+/* brand text */
+.dark .text-brand-700  { color: #4ade80; }
+.dark .text-brand-600  { color: #34d399; }
+.dark .text-brand-200  { color: #a7f3d0; }
+
+/* hover:text */
+.dark .hover\:text-brand-600:hover { color: #34d399; }
+.dark .hover\:text-brand-700:hover { color: #4ade80; }
+.dark .hover\:text-gray-600:hover  { color: #94a3b8; }
+.dark .hover\:text-gray-700:hover  { color: #cbd5e1; }
+
+/* status badge text (attivo) */
+.dark .text-green-800  { color: #86efac; }
+.dark .text-blue-800   { color: #93c5fd; }
+.dark .text-green-700  { color: #4ade80; }
+.dark .text-green-600  { color: #86efac; }
+.dark .text-red-600    { color: #f87171; }
+.dark .text-red-500    { color: #ef4444; }
+.dark .text-amber-800  { color: #fcd34d; }
+.dark .text-amber-500  { color: #fbbf24; }
+.dark .text-blue-700   { color: #93c5fd; }
+
+/* ── Border overrides ─────────────────────────────────────────────────────── */
+.dark .border-gray-100  { border-color: #1e2a3a; }
+.dark .border-gray-200  { border-color: #334155; }
+.dark .border-gray-300  { border-color: #475569; }
+.dark .border-amber-200 { border-color: #78350f; }
+.dark .border-gray-50   { border-color: #263045; }
+
+/* divide */
+.dark .divide-gray-100 > * + * { border-color: #1e2a3a; }
+.dark .divide-gray-200 > * + * { border-color: #334155; }
+
+/* ── Forms: input / textarea / select ──────────────────────────────────────── */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.dark textarea::placeholder {
+  color: #475569;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #4ade80;
+  outline: none;
+}
+
+/* ── Checkbox / radio keep visible ─────────────────────────────────────────── */
+.dark input[type="checkbox"],
+.dark input[type="radio"] {
+  accent-color: #4ade80;
+  border-color: #475569;
+}
+
+/* ── Scrollbar (dark) ───────────────────────────────────────────────────────── */
+.dark .scrollbar-thin::-webkit-scrollbar-track { background-color: #1e293b; }
+.dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #475569; }
+
+/* ── Shadows ──────────────────────────────────────────────────────────────── */
+.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,.6), 0 8px 10px -6px rgba(0,0,0,.5); }
+.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,.5), 0 4px 6px -4px rgba(0,0,0,.4); }
+
+/* ── Table stripes (ContactGrid) ─────────────────────────────────────────── */
+.dark .bg-gray-50.hover\:bg-gray-100:hover { background-color: #374e66; }
+
+/* ── Progress bar bg ─────────────────────────────────────────────────────── */
+.dark .bg-gray-200 { background-color: #374e66; }
+
+/* ── Header: brand already dark green, keep as-is ───────────────────────── */
+/* .dark .bg-brand-700 → stays green, good contrast */
+/* .dark .bg-brand-600 / hover:bg-brand-700 for buttons → stay green */
+
+/* ── Chat dashboard ──────────────────────────────────────────────────────── */
+:root { --color-chat-bg: #e5ddd5; }
+.dark { --color-chat-bg: #1a2433; }
+.dark .bg-brand-50.border-l-brand-600 { background-color: #1e3a2f; }
+.dark .bg-brand-200 { background-color: #2d4a3e; }
+.dark .bg-brand-200.text-brand-800 { background-color: #2d4a3e; color: #86efac; }
+
+/* ── Disabled / opacity states: no change needed ───────────────────────── */
+
+/* ── Datalist dropdown: browser-native, no override needed ──────────────── */
+
+/* ── Line-clamp utility ──────────────────────────────────────────────────── */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
