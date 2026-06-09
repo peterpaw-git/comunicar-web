@@ -131,7 +131,9 @@ export default function ContactModal({ contact, onClose }: Props) {
             <input className={inputCls} value={form.boleto ?? ''} onChange={e => set('boleto', e.target.value)} />
           </Field>
           <Field label={t.fieldNote}>
-            <input className={inputCls} value={form.voti ?? ''} onChange={e => set('voti', e.target.value)} />
+            <textarea rows={3} className={inputCls}
+              style={{ resize: 'vertical', minHeight: '4.5rem' }}
+              value={form.voti ?? ''} onChange={e => set('voti', e.target.value)} />
           </Field>
 
           {/* Checkboxes */}
