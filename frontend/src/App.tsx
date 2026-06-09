@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Search, X, Upload, Download, CheckSquare, Square, Users, MessageSquare, BarChart2, RefreshCw, UserPlus, Trash2, History, Sun, Moon, MessageCircle, LogOut, Settings } from 'lucide-react';
+import { Search, X, Upload, Download, CheckSquare, Square, Users, MessageSquare, BarChart2, RefreshCw, UserPlus, Trash2, History, Sun, Moon, MessageCircle, LogOut, Settings, KeyRound, ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
 import { useStore } from './store';
 import { useT } from './useT';
@@ -14,6 +14,7 @@ import SendConfirmModal from './components/SendConfirmModal';
 import ChatDashboard from './components/ChatDashboard';
 import LoginPage from './components/LoginPage';
 import UserManagementModal from './components/UserManagementModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
 import type { Contact } from './types';
 
 type AppMode = 'comunicar' | 'chat';
@@ -63,7 +64,9 @@ export default function App() {
   const [importMsg, setImportMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [modalContact, setModalContact] = useState<Contact | null | undefined>(undefined);
-  const [showUserMgmt, setShowUserMgmt] = useState(false);
+  const [showUserMgmt, setShowUserMgmt]     = useState(false);
+  const [showChangePw, setShowChangePw]     = useState(false);
+  const [showUserMenu, setShowUserMenu]     = useState(false);
   // undefined = closed, null = new, Contact = edit
 
   useEffect(() => {
@@ -229,6 +232,7 @@ export default function App() {
         />
       )}
       {showUserMgmt && <UserManagementModal onClose={() => setShowUserMgmt(false)} />}
+      {showChangePw && <ChangePasswordModal onClose={() => setShowChangePw(false)} />}
 
       {/* Header */}
       <header className="bg-brand-700 text-white px-4 py-2.5 flex items-center gap-3 shrink-0">
@@ -262,28 +266,58 @@ export default function App() {
 
         {LangSelector}
 
-        {/* User menu */}
-        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-white/20">
-          <span className="text-xs text-white/80 hidden sm:block">
-            {authUser.name}
-            <span className="ml-1 text-white/40">({authUser.role})</span>
-          </span>
-          {isAdmin && (
-            <button
-              onClick={() => setShowUserMgmt(true)}
-              title="Gestione Utenti"
-              className="p-1.5 rounded text-white/70 hover:text-white hover:bg-white/20 transition-colors"
-            >
-              <Settings size={15} />
-            </button>
-          )}
+        {/* User dropdown menu */}
+        <div className="relative ml-2 pl-2 border-l border-white/20">
           <button
-            onClick={logout}
-            title="Logout"
-            className="p-1.5 rounded text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+            onClick={() => setShowUserMenu(v => !v)}
+            className="flex items-center gap-1.5 text-xs text-white/80 hover:text-white px-2 py-1 rounded hover:bg-white/10 transition-colors"
           >
-            <LogOut size={15} />
+            <span className="hidden sm:block">
+              {authUser.name}
+              <span className="ml-1 text-white/40">({authUser.role})</span>
+            </span>
+            <ChevronDown size={13} className="text-white/50" />
           </button>
+
+          {showUserMenu && (
+            <>
+              {/* Backdrop */}
+              <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+              {/* Dropdown */}
+              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-[180px] py-1 text-gray-700">
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <p className="text-xs font-semibold text-gray-800">{authUser.name}</p>
+                  <p className="text-xs text-gray-400">{authUser.email}</p>
+                  <p className="text-xs text-brand-600 mt-0.5 capitalize">{authUser.role}</p>
+                </div>
+
+                <button
+                  onClick={() => { setShowUserMenu(false); setShowChangePw(true); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+                >
+                  <KeyRound size={13} /> Cambia password
+                </button>
+
+                {isAdmin && (
+                  <button
+                    onClick={() => { setShowUserMenu(false); setShowUserMgmt(true); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+                  >
+                    <Settings size={13} /> Gestione utenti
+                  </button>
+                )}
+
+                <div className="border-t border-gray-100 mt-1">
+                  <button
+                    onClick={() => { setShowUserMenu(false); logout(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut size={13} /> Logout
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </header>
 

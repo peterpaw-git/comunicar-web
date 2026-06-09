@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Pencil, KeyRound } from 'lucide-react';
+import { X, Plus, Trash2, Pencil } from 'lucide-react';
 import { api } from '../api';
 import type { AuthUser, UserRole } from '../types';
 
@@ -15,7 +15,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 
 const inputCls = 'border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:border-brand-500 w-full';
 
-type Mode = 'list' | 'new' | 'edit' | 'change-pw';
+type Mode = 'list' | 'new' | 'edit';
 
 export default function UserManagementModal({ onClose }: Props) {
   const [users, setUsers]   = useState<AuthUser[]>([]);
@@ -31,9 +31,6 @@ export default function UserManagementModal({ onClose }: Props) {
   const [fPass, setFPass]       = useState('');
   const [fActive, setFActive]   = useState(true);
 
-  // Change-password fields
-  const [cpCurrent, setCpCurrent] = useState('');
-  const [cpNew, setCpNew]         = useState('');
 
   const load = async () => {
     try { setUsers(await api.auth.listUsers()); } catch {}
@@ -85,28 +82,15 @@ export default function UserManagementModal({ onClose }: Props) {
     } catch {}
   };
 
-  const handleChangePw = async () => {
-    if (!cpCurrent || !cpNew) { setError('Compila entrambi i campi'); return; }
-    setSaving(true); setError('');
-    try {
-      await api.auth.changePassword(cpCurrent, cpNew);
-      setMode('list'); setCpCurrent(''); setCpNew('');
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg || 'Errore cambio password');
-    } finally { setSaving(false); }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <h2 className="font-semibold text-gray-800">
-            {mode === 'list'      && 'Gestione Utenti'}
-            {mode === 'new'       && 'Nuovo Utente'}
-            {mode === 'edit'      && `Modifica: ${editing?.name}`}
-            {mode === 'change-pw' && 'Cambia Password'}
+            {mode === 'list' && 'Gestione Utenti'}
+            {mode === 'new'  && 'Nuovo Utente'}
+            {mode === 'edit' && `Modifica: ${editing?.name}`}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
         </div>
@@ -119,13 +103,9 @@ export default function UserManagementModal({ onClose }: Props) {
           {mode === 'list' && (
             <>
               <div className="flex gap-2 justify-end">
-                <button onClick={() => { setError(''); setCpCurrent(''); setCpNew(''); setMode('change-pw'); }}
-                  className="flex items-center gap-1 text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-50">
-                  <KeyRound size={12} /> Cambia mia password
-                </button>
                 <button onClick={openNew}
                   className="flex items-center gap-1 text-xs bg-brand-600 text-white rounded px-2 py-1 hover:bg-brand-700">
-                  <Plus size={12} /> Novo utente
+                  <Plus size={12} /> Nuovo utente
                 </button>
               </div>
               <table className="w-full text-xs border-collapse">
@@ -208,19 +188,6 @@ export default function UserManagementModal({ onClose }: Props) {
             </div>
           )}
 
-          {/* ── CHANGE PASSWORD ── */}
-          {mode === 'change-pw' && (
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-0.5 text-xs font-medium text-gray-600">
-                Password attuale
-                <input type="password" className={inputCls} value={cpCurrent} onChange={e => setCpCurrent(e.target.value)} />
-              </label>
-              <label className="flex flex-col gap-0.5 text-xs font-medium text-gray-600">
-                Nuova password
-                <input type="password" className={inputCls} value={cpNew} onChange={e => setCpNew(e.target.value)} placeholder="min 6 caratteri" />
-              </label>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
@@ -232,7 +199,7 @@ export default function UserManagementModal({ onClose }: Props) {
             </button>
             <button
               disabled={saving}
-              onClick={mode === 'new' ? handleCreate : mode === 'edit' ? handleUpdate : handleChangePw}
+              onClick={mode === 'new' ? handleCreate : handleUpdate}
               className="text-sm bg-brand-600 text-white rounded px-4 py-1.5 hover:bg-brand-700 disabled:opacity-50">
               {saving ? 'Salvataggio…' : 'Salva'}
             </button>
