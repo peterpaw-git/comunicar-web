@@ -133,7 +133,7 @@ function webhookHandler(req, res) {
     const remoteJid = data?.Info?.Chat ?? data?.key?.remoteJid ?? data?.remoteJid ?? '';
     const fromMe    = data?.Info?.IsFromMe ?? data?.key?.fromMe ?? data?.fromMe ?? false;
     const jidClean = remoteJid.replace(/@.*$/, '');
-    if (!remoteJid || fromMe || jidClean === 'status') return res.sendStatus(200);
+    if (!remoteJid || jidClean === 'status') return res.sendStatus(200);
 
     // Extract text — Evolution GO uses data.Message (capital M)
     const msgObj = data?.Message ?? data?.message ?? {};
@@ -143,13 +143,13 @@ function webhookHandler(req, res) {
       || msgObj.documentMessage?.caption
       || '[Media]';
 
-    // jidClean already computed above (without @s.whatsapp.net)
     const jid = jidClean;
+    const direction = fromMe ? 'out' : 'in';
 
     const message = conversations.addMessage(jid, {
-      direction: 'in',
+      direction,
       text,
-      read: false,
+      read: direction === 'out', // outgoing = already read
     });
 
     pushToClients({ type: 'message', jid, message });
