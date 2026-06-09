@@ -1,18 +1,19 @@
 module.exports = {
-  apps: [
-    {
-      name: 'comunicar-backend',
-      script: 'server.js',
-      cwd: './backend',
-      env: { NODE_ENV: 'production', PORT: 3001 },
-      restart_delay: 2000,
-      max_restarts: 5,
+  apps: [{
+    name:        'comunicar',
+    script:      './backend/server.js',
+    cwd:         '/opt/comunicar',
+    instances:   1,
+    autorestart: true,
+    watch:       false,
+    max_memory_restart: '256M',
+    env_production: {
+      NODE_ENV: 'production',
+      PORT:     3001,
     },
-    {
-      name: 'comunicar-frontend',
-      script: './start-frontend.js',
-      restart_delay: 3000,
-      max_restarts: 5,
-    },
-  ],
+    // Logs
+    out_file:   '/opt/comunicar/logs/out.log',
+    error_file: '/opt/comunicar/logs/err.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+  }],
 };
