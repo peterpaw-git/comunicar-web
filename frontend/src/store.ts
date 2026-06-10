@@ -136,6 +136,8 @@ export const useStore = create<State>((set, get) => ({
   login: async (email, password) => {
     const { token, user } = await api.auth.login(email, password);
     setAuthToken(token);
+    // Store role so LoginPage can set autocomplete accordingly next visit
+    localStorage.setItem('comunicar-last-role', user.role);
     set({ authUser: user, authToken: token, sessionExpired: false });
   },
 

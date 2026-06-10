@@ -14,6 +14,12 @@ export default function LoginPage() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
+  // Allow autocomplete only if last session was admin (or first ever login)
+  const lastRole = localStorage.getItem('comunicar-last-role');
+  const isAdminLogin = !lastRole || lastRole === 'admin';
+  const pwAutocomplete = isAdminLogin ? 'current-password' : 'new-password';
+  const emailAutocomplete = isAdminLogin ? 'email' : 'off';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
@@ -54,7 +60,7 @@ export default function LoginPage() {
             <label className="text-xs font-medium text-gray-600">{t.loginEmail}</label>
             <input
               type="email"
-              autoComplete="email"
+              autoComplete={emailAutocomplete}
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
@@ -67,7 +73,7 @@ export default function LoginPage() {
             <label className="text-xs font-medium text-gray-600">{t.loginPassword}</label>
             <input
               type="password"
-              autoComplete="current-password"
+              autoComplete={pwAutocomplete}
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
