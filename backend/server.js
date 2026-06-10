@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { contacts, importCSV } = require('./db');
-const { requireAuth, requireNotSecretaria } = require('./middleware/auth');
+const { requireAuth, requireNotSecretaria, requireAdmin } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,8 +49,8 @@ const tmpDir = path.join(__dirname, 'uploads/tmp');
 if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 app.use('/tmp', express.static(tmpDir));
 
-// Import CSV — blocked for secretaria
-app.post('/api/import', requireNotSecretaria, upload.single('csv'), (req, res) => {
+// Import CSV — admin only
+app.post('/api/import', requireAdmin, upload.single('csv'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Nessun file caricato' });
   try {
     const count = importCSV(req.file.path);
@@ -61,8 +61,8 @@ app.post('/api/import', requireNotSecretaria, upload.single('csv'), (req, res) =
   }
 });
 
-// Export CSV — blocked for secretaria
-app.get('/api/export', requireNotSecretaria, (req, res) => {
+// Export CSV — admin only
+app.get('/api/export', requireAdmin, (req, res) => {
   const all = contacts.all();
   const header = 'ID_PROG;ATTIVO;DA_FARE;FATTO;RESPONSABILE;FILHOS;GRUPPO;CPF;GRUPPO2;EMAIL_1;EMAIL_2;WHATS_MAE;WHATS_PAI;BOLETO;VOTI;PROGRESSIVO;PREF_INT1;PREF_INT2';
   const q = v => `"${v ?? ''}"`;

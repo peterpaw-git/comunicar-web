@@ -261,8 +261,8 @@ export default function App() {
     </div>
   );
 
-  // Import/export bar — hidden for secretaria
-  const ImportBar = !isSecretaria ? (
+  // Import/export bar — admin only
+  const ImportBar = isAdmin ? (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
       <button onClick={() => fileRef.current?.click()} disabled={importing}
         className="flex items-center gap-1 text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-40">
