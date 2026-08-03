@@ -1,10 +1,10 @@
-// Evolution GO (whatsmeow) — endpoints differ from standard Evolution API
-// Auth: instance TOKEN as "apikey" header, no instance in URL path
-// NOTE: /send/media accepts raw base64 in the "url" field — no public URL needed.
+// Evolution API v2 (Node.js) — instance name required in every URL path
+// Auth: global apikey header; instance name from EVOLUTION_INSTANCE env var
 const fetch = require('node-fetch');
 
-const BASE = () => process.env.EVOLUTION_URL?.replace(/\/$/, '');
-const KEY  = () => process.env.EVOLUTION_APIKEY;
+const BASE      = () => process.env.EVOLUTION_URL?.replace(/\/$/, '');
+const KEY       = () => process.env.EVOLUTION_APIKEY;
+const INSTANCE  = () => process.env.EVOLUTION_INSTANCE || 'default';
 
 const headers = () => ({
   'Content-Type': 'application/json',
@@ -12,7 +12,7 @@ const headers = () => ({
 });
 
 async function sendText(number, text) {
-  const url = `${BASE()}/send/text`;
+  const url = `${BASE()}/message/sendText/${INSTANCE()}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: headers(),
@@ -23,26 +23,23 @@ async function sendText(number, text) {
   return body;
 }
 
-// Evolution GO accepts raw base64 directly in the "url" field (no data: prefix needed).
-// Tested: passing a base64 string gets decoded server-side and sent as media.
-// Public URL is still supported as fallback if BACKEND_PUBLIC_URL is configured.
+// Evolution v2 accepts raw base64 in the "media" field.
 async function sendMedia(number, caption, mediaBase64, fileName, mimeType) {
-  const type = mimeType?.startsWith('image') ? 'image'
-             : mimeType?.includes('pdf')     ? 'document'
-             : 'document';
+  const mediatype = mimeType?.startsWith('image') ? 'image'
+                  : mimeType?.includes('pdf')     ? 'document'
+                  : 'document';
 
-  const url = `${BASE()}/send/media`;
-
-  // Strategy 1: raw base64 in the url field (no public URL needed)
+  const url = `${BASE()}/message/sendMedia/${INSTANCE()}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
       number,
       caption,
-      type,
-      url:      mediaBase64,   // raw base64 string — Evolution GO decodes it server-side
-      filename: fileName,
+      mediatype,
+      mimetype: mimeType || 'application/octet-stream',
+      media:    mediaBase64,
+      fileName: fileName,
       delay:    1200,
     }),
   });
@@ -60,7 +57,7 @@ function buildNumber(prefix, local) {
 }
 
 async function checkStatus() {
-  const res = await fetch(`${BASE()}/instance/status`, { headers: headers() });
+  const res = await fetch(`${BASE()}/instance/connectionState/${INSTANCE()}`, { headers: headers() });
   return res.json();
 }
 

@@ -82,18 +82,19 @@ router.get('/messages/:jid', (req, res) => {
 });
 
 // GET /api/whatsapp/media?msgId=xxx&jid=xxx&filename=xxx&token=xxx
-// Proxy: downloads media from Evolution GO and returns it as binary
+// Proxy: downloads media from Evolution v2 and returns it as binary
 // Note: token in query param because this may be loaded as <img src> or <audio src>
 router.get('/media', async (req, res) => {
   const { msgId, jid, filename } = req.query;
   if (!msgId || !jid) return res.status(400).json({ error: 'msgId and jid required' });
 
-  const BASE = () => process.env.EVOLUTION_URL?.replace(/\/$/, '');
-  const KEY  = () => process.env.EVOLUTION_APIKEY;
+  const BASE     = () => process.env.EVOLUTION_URL?.replace(/\/$/, '');
+  const KEY      = () => process.env.EVOLUTION_APIKEY;
+  const INSTANCE = () => process.env.EVOLUTION_INSTANCE || 'default';
 
   try {
     const fullJid = jid.includes('@') ? jid : `${jid}@s.whatsapp.net`;
-    const dlRes = await require('node-fetch')(`${BASE()}/chat/getBase64FromMediaMessage`, {
+    const dlRes = await require('node-fetch')(`${BASE()}/chat/getBase64FromMediaMessage/${INSTANCE()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: KEY() },
       body: JSON.stringify({
