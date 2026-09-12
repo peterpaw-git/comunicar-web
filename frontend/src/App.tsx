@@ -124,6 +124,11 @@ export default function App() {
     handleExpire,
   );
 
+  const handleImportClick = () => {
+    if (!window.confirm(t.confirmImport(contacts.length))) return;
+    fileRef.current?.click();
+  };
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -138,6 +143,13 @@ export default function App() {
       setImporting(false);
       e.target.value = '';
     }
+  };
+
+  const handleExport = () => {
+    if (!window.confirm(t.confirmExport(contacts.length))) return;
+    const a = document.createElement('a');
+    a.href = '/api/export';
+    a.click();
   };
 
   const allSelected = contacts.length > 0 && contacts.every(c => selectedIds.has(c.id));
@@ -264,11 +276,11 @@ export default function App() {
   // Import/export bar — admin only
   const ImportBar = isAdmin ? (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-200">
-      <button onClick={() => fileRef.current?.click()} disabled={importing}
+      <button onClick={handleImportClick} disabled={importing}
         className="flex items-center gap-1 text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 disabled:opacity-40">
         <Upload size={12} /> {importing ? t.importing : t.importCsv}
       </button>
-      <button onClick={() => { const a = document.createElement('a'); a.href = '/api/export'; a.click(); }}
+      <button onClick={handleExport}
         className="flex items-center gap-1 text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-100">
         <Download size={12} /> {t.exportCsv}
       </button>

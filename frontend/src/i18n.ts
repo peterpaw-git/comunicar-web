@@ -12,6 +12,8 @@ const T = {
     importing:      'Importando...',
     importError:    'Errore importazione',
     importSuccess:  (n: number) => `${n} contatti importati`,
+    confirmImport:  (n: number) => `⚠️ ATTENZIONE\n\nImportare un CSV SOSTITUIRÀ TUTTI i ${n} contatti esistenti.\nQuesta azione è IRREVERSIBILE.\n\nContinuare?`,
+    confirmExport:  (n: number) => `Esportare ${n} contatti in CSV?`,
 
     // ── Toolbar ─────────────────────────────────────────────────────────────
     searchPlaceholder: 'Cerca responsabile, aluno...',
@@ -251,6 +253,8 @@ const T = {
     importing:      'Importando...',
     importError:    'Erro na importação',
     importSuccess:  (n: number) => `${n} contatos importados`,
+    confirmImport:  (n: number) => `⚠️ ATENÇÃO\n\nImportar um CSV irá SUBSTITUIR TODOS os ${n} contatos existentes.\nEsta ação é IRREVERSÍVEL.\n\nContinuar?`,
+    confirmExport:  (n: number) => `Exportar ${n} contatos em CSV?`,
 
     // ── Toolbar ─────────────────────────────────────────────────────────────
     searchPlaceholder: 'Buscar responsável, aluno...',
