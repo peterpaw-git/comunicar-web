@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Search, X, Upload, Download, CheckSquare, Square, Users, MessageSquare, BarChart2, RefreshCw, UserPlus, Trash2, History, Sun, Moon, MessageCircle, LogOut, Settings, KeyRound, ChevronDown, Timer } from 'lucide-react';
 import clsx from 'clsx';
 import { useStore } from './store';
+import { api } from './api';
 import { useT } from './useT';
 import type { Lang } from './i18n';
 import ContactGrid from './components/ContactGrid';
