@@ -147,9 +147,7 @@ export default function App() {
 
   const handleExport = () => {
     if (!window.confirm(t.confirmExport(contacts.length))) return;
-    const a = document.createElement('a');
-    a.href = '/api/export';
-    a.click();
+    api.export();
   };
 
   const allSelected = contacts.length > 0 && contacts.every(c => selectedIds.has(c.id));
