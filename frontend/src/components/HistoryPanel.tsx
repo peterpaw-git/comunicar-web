@@ -65,8 +65,8 @@ export default function HistoryPanel() {
                     <span className="text-xs font-medium text-gray-700 truncate">
                       {h.title || <span className="text-gray-400 italic">{t.noTitle}</span>}
                     </span>
-                    <span className="text-xs text-gray-400 shrink-0">{formatDate(h.sent_at, lang)}</span>
                   </div>
+                  <div className="text-xs text-gray-400 mt-0.5">{formatDate(h.sent_at, lang)}</div>
                   <div className="text-xs text-gray-500 truncate mt-0.5">
                     {h.body || <span className="italic">{t.noBody}</span>}
                   </div>
