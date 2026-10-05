@@ -164,6 +164,23 @@ const T = {
     loginLoading:   'Accesso...',
     loginError:     'Email o password non corretti',
 
+    // ── Auth — forgot password ────────────────────────────────────────────────
+    forgotLink:          'Password dimenticata?',
+    forgotTitle:         'Reimposta Password',
+    forgotSendBtn:       'Invia codice',
+    forgotSending:       'Invio...',
+    forgotSentNotice:    'Se questa email è registrata riceverai un codice (controlla anche lo spam). Se non lo ricevi, chiedi al Supervisor.',
+    forgotCodeLabel:     'Codice ricevuto',
+    forgotNewPwLabel:    'Nuova password',
+    forgotConfirmLabel:  'Conferma password',
+    forgotResetBtn:      'Reimposta password',
+    forgotResetting:     'Reimpostazione...',
+    forgotSuccess:       'Password reimpostata! Ora puoi accedere.',
+    forgotBackLogin:     'Torna al login',
+    forgotErrShort:      'Minimo 6 caratteri',
+    forgotErrMismatch:   'Le password non coincidono',
+    forgotErrInvalid:    'Codice non valido o scaduto',
+
     // ── Auth — app loading ────────────────────────────────────────────────────
     authLoading:    'Caricamento...',
 
@@ -404,6 +421,23 @@ const T = {
     loginButton:    'Entrar',
     loginLoading:   'Entrando...',
     loginError:     'E-mail ou senha incorretos',
+
+    // ── Auth — forgot password ────────────────────────────────────────────────
+    forgotLink:          'Esqueceu a senha?',
+    forgotTitle:         'Redefinir Senha',
+    forgotSendBtn:       'Enviar código',
+    forgotSending:       'Enviando...',
+    forgotSentNotice:    'Se este e-mail estiver cadastrado você receberá um código (verifique o spam). Se não receber, fale com o Supervisor.',
+    forgotCodeLabel:     'Código recebido',
+    forgotNewPwLabel:    'Nova senha',
+    forgotConfirmLabel:  'Confirmar senha',
+    forgotResetBtn:      'Redefinir senha',
+    forgotResetting:     'Redefinindo...',
+    forgotSuccess:       'Senha redefinida! Agora você pode entrar.',
+    forgotBackLogin:     'Voltar ao login',
+    forgotErrShort:      'Mínimo 6 caracteres',
+    forgotErrMismatch:   'As senhas não coincidem',
+    forgotErrInvalid:    'Código inválido ou expirado',
 
     // ── Auth — app loading ────────────────────────────────────────────────────
     authLoading:    'Carregando...',

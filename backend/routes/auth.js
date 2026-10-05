@@ -66,6 +66,60 @@ router.get('/me', requireAuth, (req, res) => {
   res.json(safeUser(user));
 });
 
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email richiesta' });
+  const users = getUsers();
+  const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase() && u.active);
+  // Always return ok to avoid email enumeration
+  if (idx !== -1) {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    users[idx].resetToken = code;
+    users[idx].resetTokenExpiry = Date.now() + 3600000; // 1 hour
+    saveUsers(users);
+    // Try email if SMTP configured
+    if (process.env.SMTP_HOST) {
+      try {
+        const nodemailer = require('nodemailer');
+        const t = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT) || 587,
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        });
+        await t.sendMail({
+          from: process.env.SMTP_FROM,
+          to: email,
+          subject: 'Comunicar — Codice reset password',
+          text: `Il tuo codice di reset password è: ${code}\n\nValido per 1 ora.`,
+        });
+      } catch (e) {
+        console.error('[forgot-password] Errore invio email:', e.message);
+      }
+    }
+    // Always log so admin can retrieve it if email fails
+    console.log(`[forgot-password] Reset code for ${email}: ${code}`);
+  }
+  res.json({ ok: true });
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  if (!email || !code || !newPassword || newPassword.length < 6)
+    return res.status(400).json({ error: 'Dati non validi (password min 6 caratteri)' });
+  const users = getUsers();
+  const idx = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase() && u.active);
+  if (idx === -1 || users[idx].resetToken !== code || !users[idx].resetTokenExpiry || Date.now() > users[idx].resetTokenExpiry)
+    return res.status(400).json({ error: 'Codice non valido o scaduto' });
+  users[idx].password = bcrypt.hashSync(newPassword, 10);
+  users[idx].resetToken = undefined;
+  users[idx].resetTokenExpiry = undefined;
+  users[idx].mustChangePassword = false;
+  saveUsers(users);
+  res.json({ ok: true });
+});
+
 // POST /api/auth/change-password
 router.post('/change-password', requireAuth, (req, res) => {
   const { currentPassword, newPassword } = req.body;

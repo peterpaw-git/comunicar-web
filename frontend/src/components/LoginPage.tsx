@@ -2,19 +2,32 @@ import { useState } from 'react';
 import { MessageSquare, Clock } from 'lucide-react';
 import { useStore } from '../store';
 import { useT } from '../useT';
+import { api } from '../api';
 import type { Lang } from '../i18n';
 
 const LANG_LABELS: Record<Lang, string> = { it: 'IT 🇮🇹', br: 'BR 🇧🇷' };
 
+type Mode = 'login' | 'forgot1' | 'forgot2' | 'done';
+
 export default function LoginPage() {
   const { login, lang, setLang, sessionExpired } = useStore();
   const t = useT();
+
+  // Login state
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
-  // Allow autocomplete only if last session was admin (or first ever login)
+  // Forgot-password state
+  const [mode, setMode]             = useState<Mode>('login');
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotCode, setForgotCode]   = useState('');
+  const [forgotPw, setForgotPw]       = useState('');
+  const [forgotConfirm, setForgotConfirm] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError]     = useState('');
+
   const lastRole = localStorage.getItem('comunicar-last-role');
   const isAdminLogin = !lastRole || lastRole === 'admin';
   const pwAutocomplete = isAdminLogin ? 'current-password' : 'new-password';
@@ -35,11 +48,48 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotStep1 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError('');
+    try {
+      await api.auth.forgotPassword(forgotEmail.trim());
+      setMode('forgot2');
+    } catch {
+      setForgotError(t.forgotErrInvalid);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleForgotStep2 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (forgotPw.length < 6) { setForgotError(t.forgotErrShort); return; }
+    if (forgotPw !== forgotConfirm) { setForgotError(t.forgotErrMismatch); return; }
+    setForgotLoading(true);
+    setForgotError('');
+    try {
+      await api.auth.resetPassword(forgotEmail.trim(), forgotCode.trim(), forgotPw);
+      setMode('done');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setForgotError(msg || t.forgotErrInvalid);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const backToLogin = () => {
+    setMode('login');
+    setForgotEmail(''); setForgotCode(''); setForgotPw(''); setForgotConfirm('');
+    setForgotError('');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-sm p-8">
         {/* Session-expired notice */}
-        {sessionExpired && (
+        {sessionExpired && mode === 'login' && (
           <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
             <Clock size={14} className="shrink-0 text-amber-500" />
             {t.sessionExpiredNotice}
@@ -55,45 +105,153 @@ export default function LoginPage() {
           <p className="text-xs text-gray-400">{t.loginSubtitle}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">{t.loginEmail}</label>
-            <input
-              type="email"
-              autoComplete={emailAutocomplete}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
-              placeholder="usuario@escola.com.br"
-              required
-            />
+        {/* ── LOGIN ── */}
+        {mode === 'login' && (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-600">{t.loginEmail}</label>
+              <input
+                type="email"
+                autoComplete={emailAutocomplete}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+                placeholder="usuario@escola.com.br"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">{t.loginPassword}</label>
+                <button
+                  type="button"
+                  onClick={() => { setForgotEmail(email); setMode('forgot1'); setError(''); }}
+                  className="text-xs text-brand-600 hover:underline"
+                >
+                  {t.forgotLink}
+                </button>
+              </div>
+              <input
+                type="password"
+                autoComplete={pwAutocomplete}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-brand-600 text-white rounded py-2 text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors mt-1"
+            >
+              {loading ? t.loginLoading : t.loginButton}
+            </button>
+          </form>
+        )}
+
+        {/* ── FORGOT STEP 1: email ── */}
+        {mode === 'forgot1' && (
+          <form onSubmit={handleForgotStep1} className="flex flex-col gap-4">
+            <h2 className="text-sm font-semibold text-gray-700 text-center">{t.forgotTitle}</h2>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-600">{t.loginEmail}</label>
+              <input
+                type="email"
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+                placeholder="usuario@escola.com.br"
+                required
+                autoFocus
+              />
+            </div>
+            {forgotError && <p className="text-xs text-red-600 text-center">{forgotError}</p>}
+            <button
+              type="submit"
+              disabled={forgotLoading}
+              className="bg-brand-600 text-white rounded py-2 text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
+            >
+              {forgotLoading ? t.forgotSending : t.forgotSendBtn}
+            </button>
+            <button type="button" onClick={backToLogin} className="text-xs text-gray-400 hover:text-gray-600 text-center">
+              {t.forgotBackLogin}
+            </button>
+          </form>
+        )}
+
+        {/* ── FORGOT STEP 2: code + new password ── */}
+        {mode === 'forgot2' && (
+          <form onSubmit={handleForgotStep2} className="flex flex-col gap-4">
+            <h2 className="text-sm font-semibold text-gray-700 text-center">{t.forgotTitle}</h2>
+            <p className="text-xs text-gray-500 text-center">{t.forgotSentNotice}</p>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-600">{t.forgotCodeLabel}</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={forgotCode}
+                onChange={e => setForgotCode(e.target.value.replace(/\D/g, ''))}
+                className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500 tracking-widest text-center"
+                placeholder="000000"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-600">{t.forgotNewPwLabel}</label>
+              <input
+                type="password"
+                value={forgotPw}
+                onChange={e => setForgotPw(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-600">{t.forgotConfirmLabel}</label>
+              <input
+                type="password"
+                value={forgotConfirm}
+                onChange={e => setForgotConfirm(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            {forgotError && <p className="text-xs text-red-600 text-center">{forgotError}</p>}
+            <button
+              type="submit"
+              disabled={forgotLoading}
+              className="bg-brand-600 text-white rounded py-2 text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors"
+            >
+              {forgotLoading ? t.forgotResetting : t.forgotResetBtn}
+            </button>
+            <button type="button" onClick={backToLogin} className="text-xs text-gray-400 hover:text-gray-600 text-center">
+              {t.forgotBackLogin}
+            </button>
+          </form>
+        )}
+
+        {/* ── DONE ── */}
+        {mode === 'done' && (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-sm text-green-700 font-medium text-center">{t.forgotSuccess}</p>
+            <button
+              onClick={backToLogin}
+              className="bg-brand-600 text-white rounded py-2 px-6 text-sm font-semibold hover:bg-brand-700 transition-colors"
+            >
+              {t.forgotBackLogin}
+            </button>
           </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-600">{t.loginPassword}</label>
-            <input
-              type="password"
-              autoComplete={pwAutocomplete}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          {error && (
-            <p className="text-xs text-red-600 text-center">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-brand-600 text-white rounded py-2 text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors mt-1"
-          >
-            {loading ? t.loginLoading : t.loginButton}
-          </button>
-        </form>
+        )}
 
         {/* Language switcher */}
         <div className="flex justify-center gap-1 mt-6">

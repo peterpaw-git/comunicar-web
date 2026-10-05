@@ -43,6 +43,12 @@ export const api = {
     changePassword: (currentPassword: string, newPassword: string) =>
       ax.post('/auth/change-password', { currentPassword, newPassword }).then(r => r.data),
 
+    forgotPassword: (email: string) =>
+      ax.post('/auth/forgot-password', { email }).then(r => r.data),
+
+    resetPassword: (email: string, code: string, newPassword: string) =>
+      ax.post('/auth/reset-password', { email, code, newPassword }).then(r => r.data),
+
     // Admin only
     listUsers: () =>
       ax.get<AuthUser[]>('/auth/users').then(r => r.data),
