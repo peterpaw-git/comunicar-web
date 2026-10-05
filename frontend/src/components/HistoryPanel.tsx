@@ -66,7 +66,7 @@ export default function HistoryPanel() {
                       {h.title || <span className="text-gray-400 italic">{t.noTitle}</span>}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">{formatDate(h.sent_at, lang)}</div>
+                  <span className="inline-block text-xs bg-gray-500 text-white rounded px-1.5 py-0.5 mt-0.5">{formatDate(h.sent_at, lang)}</span>
                   <div className="text-xs text-gray-500 truncate mt-0.5">
                     {h.body || <span className="italic">{t.noBody}</span>}
                   </div>
