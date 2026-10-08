@@ -129,8 +129,9 @@ export default function App() {
     logout('inactivity');
   }, [logout]);
 
+  const { sending } = useStore();
   const { warningVisible, remainingSeconds } = useInactivityTimer(
-    authUser ? inactivityTimeout : 0,
+    authUser && !sending ? inactivityTimeout : 0,
     handleExpire,
   );
 
