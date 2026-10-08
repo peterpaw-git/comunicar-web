@@ -66,13 +66,18 @@ async function runJob(jobId, contactList, message) {
   // Persist to message history
   try {
     const ok = job.results.filter(r => r.status === 'ok').length;
+    const failedIds = [...new Set(job.results.filter(r => r.status === 'error').map(r => r.contactId))];
     history.create({
-      type:             message.type || 'whatsapp',
-      title:            message.title || null,
-      body:             message.body || null,
-      recipients_count: job.total,
-      ok_count:         ok,
-      error_count:      job.total - ok,
+      type:               message.type || 'whatsapp',
+      title:              message.title || null,
+      body:               message.body || null,
+      image_base64:       message.imageBase64 || null,
+      image_file_name:    message.imageFileName || null,
+      image_mime:         message.imageMime || null,
+      recipients_count:   job.total,
+      ok_count:           ok,
+      error_count:        job.total - ok,
+      failed_contact_ids: failedIds,
     });
   } catch (_) {}
 

@@ -45,8 +45,12 @@ interface State {
 
   toggleSelect: (id: number) => void;
   selectAll: () => void;
+  selectContacts: (ids: number[]) => void;
   clearSelection: () => void;
   applyGroupFilter: (g: SelectionGroup) => void;
+
+  pendingTabSwitch: 'compose' | null;
+  setPendingTabSwitch: (tab: 'compose' | null) => void;
 
   fetchSelectionGroups: () => Promise<void>;
   saveSelectionGroup: (name: string, description?: string) => Promise<void>;
@@ -108,6 +112,8 @@ export const useStore = create<State>((set, get) => ({
   historySearch: '',
 
   selectedIds: new Set(),
+  pendingTabSwitch: null,
+  setPendingTabSwitch: (tab) => set({ pendingTabSwitch: tab }),
 
   selectionGroups: [],
   templates: [],
@@ -224,6 +230,7 @@ export const useStore = create<State>((set, get) => ({
     set({ selectedIds: new Set(get().contacts.map(c => c.id)) });
   },
 
+  selectContacts: (ids) => set({ selectedIds: new Set(ids) }),
   clearSelection: () => set({ selectedIds: new Set() }),
 
   applyGroupFilter: (g) => {

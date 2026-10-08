@@ -188,6 +188,10 @@ const history = {
     return item;
   },
 
+  get: (id) => {
+    return readJSON('history').find(h => h.id === Number(id)) ?? null;
+  },
+
   remove: (id) => {
     writeJSON('history', readJSON('history').filter(h => h.id !== Number(id)));
   },

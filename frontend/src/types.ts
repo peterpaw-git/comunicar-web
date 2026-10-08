@@ -51,10 +51,14 @@ export interface HistoryEntry {
   type: 'whatsapp' | 'email';
   title: string | null;
   body: string | null;
+  image_base64?: string | null;
+  image_file_name?: string | null;
+  image_mime?: string | null;
   recipients_count: number;
   ok_count: number;
   error_count: number;
   sent_at: string;
+  failed_contact_ids?: number[];
 }
 
 export interface ChatMessage {

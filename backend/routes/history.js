@@ -7,6 +7,12 @@ router.get('/', (req, res) => {
   res.json(history.all({ q, limit: Number(limit) }));
 });
 
+router.get('/:id', (req, res) => {
+  const entry = history.get(req.params.id);
+  if (!entry) return res.status(404).json({ error: 'not found' });
+  res.json(entry);
+});
+
 router.delete('/:id', (req, res) => {
   history.remove(req.params.id);
   res.json({ ok: true });

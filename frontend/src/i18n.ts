@@ -124,6 +124,7 @@ const T = {
     noBody:           'Nessun testo',
     recipientsSuffix: 'dest.',
     reuseBtn:         'Riusa',
+    retryErrors:      (n: number) => `↺ Riprova ${n} errori`,
     deleteBtn:        'Elimina',
 
     // ── Send results ──────────────────────────────────────────────────────────
@@ -382,6 +383,7 @@ const T = {
     noBody:           'Sem texto',
     recipientsSuffix: 'dest.',
     reuseBtn:         'Reutilizar',
+    retryErrors:      (n: number) => `↺ Repetir ${n} erros`,
     deleteBtn:        'Excluir',
 
     // ── Send results ──────────────────────────────────────────────────────────

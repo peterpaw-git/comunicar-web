@@ -41,6 +41,7 @@ export default function App() {
     lang, setLang, theme, setTheme,
     authUser, authLoading, loadAuth, logout,
     inactivityTimeout, fetchSettings,
+    pendingTabSwitch, setPendingTabSwitch,
   } = useStore();
   const t = useT();
 
@@ -62,6 +63,14 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Switch to compose tab when HistoryPanel requests a retry
+  useEffect(() => {
+    if (!pendingTabSwitch) return;
+    setRightTab(pendingTabSwitch);
+    setMobileTab(pendingTabSwitch === 'compose' ? 'compose' : 'history');
+    setPendingTabSwitch(null);
+  }, [pendingTabSwitch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSecretaria = authUser?.role === 'secretaria';
   const isAdmin      = authUser?.role === 'admin';

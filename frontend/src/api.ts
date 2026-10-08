@@ -139,6 +139,9 @@ export const api = {
     list: (q = '') =>
       ax.get<HistoryEntry[]>('/history', { params: { q, limit: 200 } }).then(r => r.data),
 
+    get: (id: number) =>
+      ax.get<HistoryEntry>(`/history/${id}`).then(r => r.data),
+
     remove: (id: number) =>
       ax.delete(`/history/${id}`).then(r => r.data),
   },

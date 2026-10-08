@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Search, Trash2, RotateCcw, MessageSquare, Mail } from 'lucide-react';
+import { Search, Trash2, RotateCcw, MessageSquare, Mail, RefreshCw } from 'lucide-react';
 import { useStore } from '../store';
 import { useT } from '../useT';
+import { api } from '../api';
 import type { HistoryEntry } from '../types';
 
 function formatDate(iso: string, lang: string) {
@@ -12,9 +13,10 @@ function formatDate(iso: string, lang: string) {
 }
 
 export default function HistoryPanel() {
-  const { history, historySearch, fetchHistory, removeHistory, setHistorySearch, setDraft, lang } = useStore();
+  const { history, historySearch, fetchHistory, removeHistory, setHistorySearch, setDraft, selectContacts, setPendingTabSwitch, lang } = useStore();
   const t = useT();
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [retrying, setRetrying] = useState<number | null>(null);
 
   useEffect(() => { fetchHistory(); }, []);
 
@@ -24,6 +26,27 @@ export default function HistoryPanel() {
       title: h.title ?? '',
       body: h.body ?? '',
     });
+  };
+
+  const retryErrors = async (h: HistoryEntry) => {
+    setRetrying(h.id);
+    try {
+      // Fetch full entry to get failed_contact_ids (may not be in list)
+      const full = await api.history.get(h.id);
+      const ids = full.failed_contact_ids ?? [];
+      selectContacts(ids);
+      setDraft({
+        type: h.type,
+        title: h.title ?? '',
+        body: h.body ?? '',
+        imageBase64: full.image_base64 ?? undefined,
+        imageFileName: full.image_file_name ?? undefined,
+        imageMime: full.image_mime ?? undefined,
+      });
+      setPendingTabSwitch('compose');
+    } finally {
+      setRetrying(null);
+    }
   };
 
   return (
@@ -86,13 +109,23 @@ export default function HistoryPanel() {
                       {h.body}
                     </pre>
                   )}
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => reuse(h)}
                       className="flex items-center gap-1 text-xs bg-brand-600 text-white rounded px-2 py-1 hover:bg-brand-700"
                     >
                       <RotateCcw size={11} /> {t.reuseBtn}
                     </button>
+                    {h.error_count > 0 && (
+                      <button
+                        onClick={() => retryErrors(h)}
+                        disabled={retrying === h.id}
+                        className="flex items-center gap-1 text-xs bg-amber-500 text-white rounded px-2 py-1 hover:bg-amber-600 disabled:opacity-50"
+                      >
+                        <RefreshCw size={11} className={retrying === h.id ? 'animate-spin' : ''} />
+                        {retrying === h.id ? '...' : t.retryErrors(h.error_count)}
+                      </button>
+                    )}
                     <button
                       onClick={() => removeHistory(h.id)}
                       className="flex items-center gap-1 text-xs border border-gray-300 rounded px-2 py-1 text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
